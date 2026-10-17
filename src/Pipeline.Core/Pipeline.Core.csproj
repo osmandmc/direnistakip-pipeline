@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- No Azure references here (D-013, D-027). -->
+  <ItemGroup>
+    <ProjectReference Include="..\Pipeline.Contracts\Pipeline.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pipeline.Core.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,33 @@
+name: infra
+
+on:
+  push:
+    branches: [main]
+    paths: ['infra/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency: infra-prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy
+        env:
+          BUDGET_EMAIL: ${{ vars.BUDGET_EMAIL }}
+        run: >
+          az deployment group create
+          --resource-group ${{ vars.AZURE_RESOURCE_GROUP }}
+          --parameters infra/main.bicepparam
+          --name "infra-${{ github.run_number }}"
