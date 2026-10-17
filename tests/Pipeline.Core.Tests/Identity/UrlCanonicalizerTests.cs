@@ -22,6 +22,8 @@ public class UrlCanonicalizerTests
     // Tracking parameters removed, others kept and sorted
     [InlineData("https://birgun.net/haber/x?utm_source=tw&utm_medium=social", "https://birgun.net/haber/x")]
     [InlineData("https://birgun.net/haber/x?fbclid=abc", "https://birgun.net/haber/x")]
+    // Evrensel RSS links carry tracking tags (seen in T4)
+    [InlineData("https://www.evrensel.net/haber/6005412/x?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_syndication", "https://evrensel.net/haber/6005412/x")]
     [InlineData("https://kizilbayrak.net/?p=42&utm_campaign=y", "https://kizilbayrak.net?p=42")]
     [InlineData("https://example.org/a?b=2&a=1", "https://example.org/a?a=1&b=2")]
     // Path case is preserved (paths can be case-sensitive)

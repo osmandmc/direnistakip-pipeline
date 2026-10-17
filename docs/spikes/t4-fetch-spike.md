@@ -6,12 +6,13 @@ Question: can the four sources be read from Azure, is the article in the HTML wi
 
 | Source | robots.txt for general crawlers | Article discovery | URL pattern | Notes |
 |---|---|---|---|---|
-| Evrensel | Allowed (admin/system paths excluded) | `sitemap-news.xml` (~290 recent links) | `https://www.evrensel.net/haber/{id}/{slug}` | **Content-Signal: `ai-train=no, search=yes, ai-input=no`**. Blocks AI training crawlers (GPTBot, CCBot, anthropic-ai …) |
-| BirGün | Allowed; `?amp` and `*.html` disallowed | `sitemap/haberler` (~500 links) | `https://www.birgun.net/haber/{slug}-{id}` | — |
-| Sendika.org | Allowed; search and `?page=` disallowed | Homepage links (`/feed` and `/sitemap.xml` return HTML, not XML) | `https://sendika.org/{yyyy}/{mm}/{slug}-{id}` | Historically used numbered domains (sendika62.org …) |
-| Kızılbayrak | Allowed; paginated listings disallowed | `/rss` (RSS 2.0, ~50 items with dates) | `https://kizilbayrak85.net/ana-sayfa/{section}/{sub}/{slug}` | `www.kizilbayrak.net` **redirects to `kizilbayrak85.net`**. HTTPS to the old host failed the TLS handshake; HTTP works and redirects |
+| Evrensel | Allowed (admin/system paths excluded) | RSS `rss/haber.xml` (100 items ≈ 14 h; not advertised — the advertised `/rss` is an HTML page). Also `sitemap-news.xml` | `https://www.evrensel.net/haber/{id}/{slug}` | **Content-Signal: `ai-train=no, search=yes, ai-input=no`**. Blocks AI training crawlers (GPTBot, CCBot, anthropic-ai …) |
+| BirGün | Allowed; `?amp` and `*.html` disallowed | RSS `rss/home` (110 items). Also `sitemap/haberler` | `https://www.birgun.net/haber/{slug}-{id}` | — |
+| Sendika.org | Allowed; search and `?page=` disallowed | **No RSS found** (none advertised; `/feed`, `/rss`, `/feed.xml`, `/rss.xml`, `?feed=rss2` all return HTML). Homepage links | `https://sendika.org/{yyyy}/{mm}/{slug}-{id}` | Historically used numbered domains (sendika62.org …) |
+| Kızılbayrak | Allowed; paginated listings disallowed | RSS `/rss` (~50 items with dates) | `https://kizilbayrak85.net/ana-sayfa/{section}/{sub}/{slug}` | `www.kizilbayrak.net` **redirects to `kizilbayrak85.net`**. HTTPS to the old host failed the TLS handshake; HTTP works and redirects |
 
 ### Consequences already applied
+- **Discovery:** RSS where it exists (Evrensel, BirGün, Kızılbayrak), parsed as XML so `&amp;` in links is decoded; Sendika uses homepage links. RSS is also the intended input for the Collector (phase 5).
 - **Identity (D-024):** numbered mirror domains (`kizilbayrak\d*.net`, `sendika\d*.org`) canonicalise to the main host, so an article keeps one `ArticleId` when the site changes domain. Tests added.
 - **Fetch (T7):** always fetch the **original** URL (or the latest redirect target), never the canonical one. The canonical URL is for identity only (`https://kizilbayrak.net/...` may not even resolve).
 

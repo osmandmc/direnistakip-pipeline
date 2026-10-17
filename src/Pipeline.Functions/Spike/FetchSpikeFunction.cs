@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Http;
@@ -26,15 +27,16 @@ public sealed partial class FetchSpikeFunction(
     private static readonly TimeSpan DelayBetweenRequests = TimeSpan.FromSeconds(3);
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
-    private sealed record SpikeSource(string DiscoveryUrl, Regex ArticleLink);
+    /// <summary>Where to find recent article links: an RSS feed, or (no feed) links in an HTML page.</summary>
+    private sealed record SpikeSource(string DiscoveryUrl, Regex? HtmlLinkPattern = null);
 
-    // Discovery pages found from this repo's robots.txt / sitemap check.
+    // Checked by hand in T4: RSS where a feed exists; Sendika has none.
     private static readonly Dictionary<string, SpikeSource> Sources = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["evrensel"] = new("https://www.evrensel.net/sitemap-news.xml", EvrenselLink()),
-        ["birgun"] = new("https://www.birgun.net/sitemap/haberler", BirgunLink()),
+        ["evrensel"] = new("https://www.evrensel.net/rss/haber.xml"),
+        ["birgun"] = new("https://www.birgun.net/rss/home"),
+        ["kizilbayrak"] = new("http://www.kizilbayrak.net/rss"),
         ["sendika"] = new("https://sendika.org/", SendikaLink()),
-        ["kizilbayrak"] = new("http://www.kizilbayrak.net/rss", KizilbayrakLink()),
     };
 
     [Function("FetchSpike")]
@@ -54,13 +56,21 @@ public sealed partial class FetchSpikeFunction(
         var container = blobs.GetBlobContainerClient(Container);
 
         var discovery = await FetchAsync(http, source.DiscoveryUrl, ct);
-        var links = discovery.Body is null
-            ? []
-            : source.ArticleLink.Matches(discovery.Body)
-                .Select(m => new Uri(new Uri(discovery.FinalUrl), m.Value).AbsoluteUri)
-                .Distinct()
-                .Take(count)
-                .ToList();
+        List<string> links;
+        try
+        {
+            links = discovery.Body is null
+                ? []
+                : ExtractLinks(source, discovery.Body)
+                    .Select(l => new Uri(new Uri(discovery.FinalUrl), l.Trim()).AbsoluteUri)
+                    .Distinct()
+                    .Take(count)
+                    .ToList();
+        }
+        catch (System.Xml.XmlException ex)
+        {
+            return new OkObjectResult(new { runId, source = sourceId, discovery = new { source.DiscoveryUrl, discovery.Status, error = $"Not valid RSS: {ex.Message}" } });
+        }
 
         var articles = new List<ArticleResult>();
         foreach (var url in links)
@@ -107,6 +117,14 @@ public sealed partial class FetchSpikeFunction(
 
         return new OkObjectResult(report);
     }
+
+    // RSS is parsed as XML so entities such as &amp; in links are decoded correctly.
+    private static IEnumerable<string> ExtractLinks(SpikeSource source, string body) =>
+        source.HtmlLinkPattern is { } pattern
+            ? pattern.Matches(body).Select(m => m.Value)
+            : XDocument.Parse(body).Descendants("item")
+                .Select(item => (string?)item.Element("link"))
+                .OfType<string>();
 
     private sealed record FetchResult(int? Status, string FinalUrl, long ElapsedMs, int Bytes, string? Body, string? Error);
 
@@ -156,17 +174,8 @@ public sealed partial class FetchSpikeFunction(
         return sorted.Length == 0 ? 0 : sorted[sorted.Length / 2];
     }
 
-    [GeneratedRegex(@"https://www\.evrensel\.net/haber/\d+/[^<""'\s]+")]
-    private static partial Regex EvrenselLink();
-
-    [GeneratedRegex(@"https://www\.birgun\.net/haber/[^<""'\s]+")]
-    private static partial Regex BirgunLink();
-
     [GeneratedRegex(@"/20\d{2}/\d{2}/[a-z0-9-]+-\d+")]
     private static partial Regex SendikaLink();
-
-    [GeneratedRegex(@"https?://(?:www\.)?kizilbayrak\d*\.net/ana-sayfa/[^<""'\s]+")]
-    private static partial Regex KizilbayrakLink();
 
     [GeneratedRegex(@"<(script|style)\b[^>]*>.*?</\1>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
     private static partial Regex ScriptOrStyle();
