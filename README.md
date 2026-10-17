@@ -24,17 +24,35 @@ cp src/Pipeline.Functions/local.settings.example.json src/Pipeline.Functions/loc
 
 ## One-time Azure setup
 
-1. Create a resource group in West Europe.
-2. Create an Entra app registration with a federated credential for this repo (`environment:prod` and `pull_request` subjects). Grant it **Contributor** and **Role Based Access Control Administrator** on the resource group (the template assigns roles).
-3. Create the GitHub environment `prod` and set these repository variables:
+Three layers, each deployed differently:
+
+| Layer | Template | Runs | By |
+|---|---|---|---|
+| Bootstrap | `infra/bootstrap/` — resource group + GitHub deploy identity | Once | You (Owner of the subscription) |
+| Infrastructure | `infra/main.bicep` | When `infra/` changes | `infra` workflow |
+| Code | `src/` | When code changes | `functions` workflow |
+
+**1. Bootstrap (Azure portal → Cloud Shell, Bash).** Check first that the subscription has no Cosmos DB free-tier account; if it has, set `cosmosFreeTier = false` in `infra/main.bicepparam`.
+
+```sh
+git clone https://github.com/osmandmc/direnistakip-pipeline && cd direnistakip-pipeline
+az deployment sub create --name bootstrap --location swedencentral \
+  --template-file infra/bootstrap/main.bicep \
+  --query properties.outputs
+```
+
+This creates `rg-direnistakip-prod` and the managed identity `id-github-deploy`. GitHub signs in as this identity via OIDC (no secret). It has Contributor on the resource group and may grant only the roles the Function App needs.
+
+**2. GitHub (repo → Settings).**
+- *Environments* → create `prod` (optionally add yourself as required reviewer).
+- *Secrets and variables → Actions → Variables* → add:
 
 | Variable | Value |
 |---|---|
-| `AZURE_CLIENT_ID` | App registration client ID |
-| `AZURE_TENANT_ID` | Tenant ID |
-| `AZURE_SUBSCRIPTION_ID` | Subscription ID |
-| `AZURE_RESOURCE_GROUP` | Resource group name |
+| `AZURE_CLIENT_ID` | Bootstrap output |
+| `AZURE_TENANT_ID` | Bootstrap output |
+| `AZURE_SUBSCRIPTION_ID` | Bootstrap output |
+| `AZURE_RESOURCE_GROUP` | Bootstrap output |
 | `BUDGET_EMAIL` | Budget alert address |
-| `AZURE_FUNCTIONAPP_NAME` | From the `functionAppName` output of the first infra run |
 
-4. Run the `infra` workflow, set `AZURE_FUNCTIONAPP_NAME`, then run `functions`.
+**3. Deploy.** Actions → `infra` → *Run workflow*. Copy `functionAppName` from the deployment output (portal → resource group → Deployments) into a new variable `AZURE_FUNCTIONAPP_NAME`, then run `functions`. Until these variables exist, both workflows are skipped.

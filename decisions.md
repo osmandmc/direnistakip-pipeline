@@ -48,7 +48,7 @@ Diagrams, roadmap and cost options: [architecture.md](architecture.md).
 | D-019 | Runtime: .NET isolated Azure Functions | Proposed |
 | D-021 | Azure Storage Queues | Proposed |
 | D-025 | API auth: API key to start | Proposed |
-| D-026 | Region: West Europe | Proposed |
+| D-026 | Region: Sweden Central | Proposed |
 
 **Delivery and operations**
 
@@ -161,8 +161,9 @@ Diagrams, roadmap and cost options: [architecture.md](architecture.md).
 ## D-025 — API auth: API key to start (proposed)
 **Decision.** API key in a header, stored in Key Vault. The API is internet-reachable (shared hosting cannot join a VNet) but authenticated. Add IP restriction if the app's outbound IP proves stable; Entra app token later if needed.
 
-## D-026 — Region: West Europe (proposed)
-**Decision.** All pipeline resources in West Europe.
+## D-026 — Region: Sweden Central (proposed)
+**Decision.** All pipeline resources in Sweden Central (EU).
+**Context.** West Europe rejected the new pay-as-you-go subscription ("region not accepting new customers"). Any EU region with Flex Consumption that accepts the subscription is acceptable; North Europe is the fallback. Set in `infra/main.bicepparam` and the bootstrap default.
 
 ## D-027 — Solution structure: libraries vs deployable units (proposed)
 **Decision.** Few deployable units; logic in libraries so hosts stay swappable (D-013).
@@ -183,7 +184,7 @@ App-side changes (review screen, `ArticleReview`, outcome call) live in the app'
 **Check.** The app's target framework (if .NET Framework, `Contracts` must target `netstandard2.0`).
 
 ## D-028 — CI/CD: GitHub Actions with OIDC (proposed)
-**Decision.** GitHub Actions (repo is on GitHub). Azure login via OIDC federated credentials; no stored secrets.
+**Decision.** GitHub Actions (repo is on GitHub). Azure login via OIDC: a user-assigned managed identity with federated credentials, created once by `infra/bootstrap` (Bicep, subscription scope); no stored secrets, no Entra app registration. It holds Contributor on the resource group and an RBAC Administrator role constrained to the roles `main.bicep` assigns.
 - `ci.yml` — on PR: build, test, `bicep build` + `what-if`.
 - `infra.yml` — on main, path `/infra/**`: deploy Bicep (environment approval).
 - `functions.yml` — on main, path `src/**`, `prompts/**`, `schema/**`: publish and deploy the Function App.
