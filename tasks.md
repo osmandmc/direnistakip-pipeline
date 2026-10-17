@@ -8,9 +8,9 @@ Status: ☐ open · ◐ in progress · ☑ done
 
 | # | Task | Deliverable | Done when | Who |
 |---|---|---|---|---|
-| ◐ T1 | Commit foundations | Branch + PR with current code, docs, workflows | CI green on the PR | Claude, you merge |
-| ◐ T2 | Azure bootstrap | `infra/bootstrap/` (Bicep): resource group, managed identity with OIDC federated credentials, role assignments; README setup steps; workflow guards | Template reviewed | Claude |
-| ☐ T3 | Run bootstrap + first deploy | Infra and Function App deployed | `/api/health` returns ok; budget alert exists | **You** run, Claude fixes |
+| ☑ T1 | Commit foundations | Branch + PR with current code, docs, workflows | CI green on the PR | Claude, you merge |
+| ☑ T2 | Azure bootstrap | `infra/bootstrap/` (Bicep): resource group, managed identity with OIDC federated credentials, role assignments; README setup steps; workflow guards | Template reviewed | Claude |
+| ☑ T3 | Run bootstrap + first deploy | Infra and Function App deployed | `/api/health` returns ok; budget alert exists | **You** run, Claude fixes |
 
 ## Phase 2 — Walking skeleton (no AI)
 
