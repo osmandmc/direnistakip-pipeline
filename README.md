@@ -36,7 +36,7 @@ Three layers, each deployed differently:
 
 ```sh
 git clone https://github.com/osmandmc/direnistakip-pipeline && cd direnistakip-pipeline
-az deployment sub create --name bootstrap --location westeurope \
+az deployment sub create --name bootstrap --location swedencentral \
   --template-file infra/bootstrap/main.bicep \
   --query properties.outputs
 ```

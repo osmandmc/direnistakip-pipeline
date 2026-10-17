@@ -292,7 +292,7 @@ sequenceDiagram
 
 | Where | What |
 |---|---|
-| Azure (West Europe) | Function App (stages, API, timers) · Storage (queues, raw HTML) · Cosmos DB (records, ledger, rollups) · Key Vault · Application Insights |
+| Azure (Sweden Central) | Function App (stages, API, timers) · Storage (queues, raw HTML) · Cosmos DB (records, ledger, rollups) · Key Vault · Application Insights |
 | SmarterASP | Existing app + MSSQL (unchanged hosting) |
 | External | LLM provider (open) |
 | GitHub | Code, Actions CI/CD, Bicep |

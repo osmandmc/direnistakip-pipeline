@@ -1,11 +1,11 @@
 // One-time bootstrap (T2): resource group + the identity GitHub Actions signs in as.
 // Run once by an Owner of the subscription, e.g. from Azure Cloud Shell:
-//   az deployment sub create --location westeurope --template-file infra/bootstrap/main.bicep
+//   az deployment sub create --location swedencentral --template-file infra/bootstrap/main.bicep
 // Safe to re-run. Pipeline resources themselves come from infra/main.bicep via the infra workflow.
 
 targetScope = 'subscription'
 
-param location string = 'westeurope'
+param location string = 'swedencentral'
 param environmentName string = 'prod'
 param resourceGroupName string = 'rg-direnistakip-${environmentName}'
 
