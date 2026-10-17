@@ -21,7 +21,9 @@ jobs:
       - run: dotnet build --no-restore -c Release
       - run: dotnet test --no-build -c Release
       - name: Bicep build
-        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+        run: |
+          az bicep build --file infra/main.bicep --stdout > /dev/null
+          az bicep build --file infra/bootstrap/main.bicep --stdout > /dev/null
 
   what-if:
     # Runs once Azure OIDC variables are configured (D-028).

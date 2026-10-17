@@ -183,7 +183,7 @@ App-side changes (review screen, `ArticleReview`, outcome call) live in the app'
 **Check.** The app's target framework (if .NET Framework, `Contracts` must target `netstandard2.0`).
 
 ## D-028 — CI/CD: GitHub Actions with OIDC (proposed)
-**Decision.** GitHub Actions (repo is on GitHub). Azure login via OIDC federated credentials; no stored secrets.
+**Decision.** GitHub Actions (repo is on GitHub). Azure login via OIDC: a user-assigned managed identity with federated credentials, created once by `infra/bootstrap` (Bicep, subscription scope); no stored secrets, no Entra app registration. It holds Contributor on the resource group and an RBAC Administrator role constrained to the roles `main.bicep` assigns.
 - `ci.yml` — on PR: build, test, `bicep build` + `what-if`.
 - `infra.yml` — on main, path `/infra/**`: deploy Bicep (environment approval).
 - `functions.yml` — on main, path `src/**`, `prompts/**`, `schema/**`: publish and deploy the Function App.

@@ -18,6 +18,8 @@ concurrency: functions-prod
 
 jobs:
   deploy:
+    # Skipped until infra is deployed and AZURE_FUNCTIONAPP_NAME is set (T3).
+    if: vars.AZURE_CLIENT_ID != '' && vars.AZURE_FUNCTIONAPP_NAME != ''
     runs-on: ubuntu-latest
     environment: prod
     steps:
