@@ -157,6 +157,7 @@ Diagrams, roadmap and cost options: [architecture.md](architecture.md).
 
 ## D-024 — URL canonicalisation rules with a test table (proposed)
 **Decision.** Lowercase host, strip tracking params and fragments, normalise per-source AMP/mobile variants. Rules covered by a test table; changes require a new entry (identity depends on them).
+**Update (T4).** Numbered mirror domains map to the source's main host (`kizilbayrak85.net` → `kizilbayrak.net`, `sendika63.org` → `sendika.org`). The canonical URL is for identity only; fetching uses the original URL.
 
 ## D-025 — API auth: API key to start (proposed)
 **Decision.** API key in a header, stored in Key Vault. The API is internet-reachable (shared hosting cannot join a VNet) but authenticated. Add IP restriction if the app's outbound IP proves stable; Entra app token later if needed.
@@ -205,6 +206,6 @@ Environments: `prod` only to start; add `dev` when changes need a safe place to 
 5. **Multi-event articles:** one article → several cases? Affects `ArticleReview` key and draft shape.
 6. **Metrics store:** Cosmos rollups or relational.
 7. **LLM provider, model and monthly cap** (see cost options in architecture.md).
-8. **Source terms:** robots.txt, terms of use, attribution. Before the first scheduled fetch.
+8. **Source terms:** robots.txt, terms of use, attribution. Before the first scheduled fetch. robots.txt checked in T4: general crawling allowed on all four; **Evrensel signals `ai-input=no`**, which affects LLM extraction (see `docs/spikes/t4-fetch-spike.md`).
 9. **Privacy:** fields never stored (e.g. rank-and-file names). Before the first scheduled fetch; immutable records make deletion costly.
 10. **Operations:** runbook and IaC in the repo.

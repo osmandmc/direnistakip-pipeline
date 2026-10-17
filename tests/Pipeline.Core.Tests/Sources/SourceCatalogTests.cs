@@ -10,6 +10,7 @@ public class SourceCatalogTests
     [InlineData("https://sendika.org/2026/10/x", "sendika")]
     [InlineData("https://kizilbayrak.net/?p=1", "kizilbayrak")]
     [InlineData("https://m.birgun.net/haber/x", "birgun")]
+    [InlineData("https://kizilbayrak85.net/ana-sayfa/haber/guncel/x", "kizilbayrak")]
     public void ResolvesKnownSources(string url, string expectedId)
     {
         Assert.True(SourceCatalog.TryResolve(UrlCanonicalizer.Canonicalize(url), out var source));

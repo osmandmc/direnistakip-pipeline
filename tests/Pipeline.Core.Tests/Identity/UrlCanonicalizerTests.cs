@@ -11,6 +11,10 @@ public class UrlCanonicalizerTests
     [InlineData("https://WWW.BirGun.net/haber/x", "https://birgun.net/haber/x")]
     [InlineData("https://m.sendika.org/2026/10/x/", "https://sendika.org/2026/10/x")]
     [InlineData("https://amp.birgun.net/haber/x", "https://birgun.net/haber/x")]
+    // Numbered mirror domains map to the source's main host (seen in T4: kizilbayrak.net → kizilbayrak85.net)
+    [InlineData("https://kizilbayrak85.net/ana-sayfa/haber/guncel/x", "https://kizilbayrak.net/ana-sayfa/haber/guncel/x")]
+    [InlineData("http://www.kizilbayrak54.net/ana-sayfa/haber/guncel/x", "https://kizilbayrak.net/ana-sayfa/haber/guncel/x")]
+    [InlineData("https://sendika63.org/2020/01/x-123", "https://sendika.org/2020/01/x-123")]
     // AMP path suffix, trailing slash, fragment, default port
     [InlineData("https://evrensel.net/haber/1/x/amp", "https://evrensel.net/haber/1/x")]
     [InlineData("https://evrensel.net/haber/1/x/#yorumlar", "https://evrensel.net/haber/1/x")]
