@@ -62,7 +62,7 @@ resource logs 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   properties: {
     sku: { name: 'PerGB2018' }
     retentionInDays: 30
-    workspaceCapping: { dailyQuotaGb: 1 }
+    workspaceCapping: { dailyQuotaGb: json('0.15') } // ~4.5 GB/month, inside the free 5 GB
   }
 }
 
@@ -233,7 +233,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       }
       scaleAndConcurrency: {
         maximumInstanceCount: 40
-        instanceMemoryMB: 2048
+        instanceMemoryMB: 512 // I/O-bound stages; keeps GB-s inside the free grant
       }
       runtime: {
         name: 'dotnet-isolated'

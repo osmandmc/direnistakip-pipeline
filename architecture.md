@@ -299,7 +299,7 @@ sequenceDiagram
 
 ## 6. Roadmap (D-017)
 
-1. **Foundations** — repo, IaC, budget alert, contracts. *Done (not deployed).*
+1. **Foundations** — repo, IaC, budget alert, contracts. *Done, deployed.*
 2. **Walking skeleton** — CSV adapter → fetch → parse → ledger and funnel, no AI.
 3. **Extraction** — drafts and pre-fill in the review screen.
 4. **Relevance** — stage before extraction.

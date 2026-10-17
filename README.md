@@ -36,6 +36,14 @@ Three layers, each deployed differently:
 
 ```sh
 git clone https://github.com/osmandmc/direnistakip-pipeline && cd direnistakip-pipeline
+
+# A new subscription must register each service family once. The deploy identity
+# only has rights on the resource group, so it cannot do this itself.
+for p in Microsoft.Web Microsoft.Storage Microsoft.OperationalInsights Microsoft.Insights \
+         Microsoft.DocumentDB Microsoft.KeyVault Microsoft.Consumption; do
+  az provider register --namespace $p
+done
+
 az deployment sub create --name bootstrap --location swedencentral \
   --template-file infra/bootstrap/main.bicep \
   --query properties.outputs
