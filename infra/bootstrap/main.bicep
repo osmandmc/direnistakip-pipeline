@@ -9,8 +9,10 @@ param location string = 'swedencentral'
 param environmentName string = 'prod'
 param resourceGroupName string = 'rg-direnistakip-${environmentName}'
 
-@description('GitHub repository allowed to sign in, as owner/name.')
-param githubRepo string = 'osmandmc/direnistakip-pipeline'
+// GitHub's immutable OIDC subject format: owner@ownerId/repo@repoId (IDs are public, not secrets).
+// The exact value appears in an AADSTS700213 login error if it ever changes.
+@description('GitHub repository allowed to sign in, as it appears in the OIDC subject claim.')
+param githubRepo string = 'osmandmc@20256505/direnistakip-pipeline@1423618021'
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: resourceGroupName
