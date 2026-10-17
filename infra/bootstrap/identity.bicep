@@ -5,7 +5,7 @@ param githubRepo string
 param githubEnvironment string
 
 var roles = {
-  contributor: 'b24988ac-6180-49e2-a7dd-b4ccf4ec20b4'
+  contributor: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
   rbacAdministrator: 'f58310d9-a9f6-439a-9e8d-f62e7b41a168'
 }
 
