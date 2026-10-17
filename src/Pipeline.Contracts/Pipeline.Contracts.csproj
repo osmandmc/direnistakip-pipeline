@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Direnistakip.Pipeline.Contracts</PackageId>
+    <Description>Messages and API DTOs shared between the pipeline and the direnistakip app (D-023).</Description>
+  </PropertyGroup>
+</Project>
