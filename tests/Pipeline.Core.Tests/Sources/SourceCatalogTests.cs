@@ -18,6 +18,10 @@ public class SourceCatalogTests
     }
 
     [Fact]
+    public void OnlyEvrenselIsEnabled() =>
+        Assert.Equal(["evrensel"], SourceCatalog.All.Where(s => s.Enabled).Select(s => s.Id));
+
+    [Fact]
     public void UnknownHostIsNotResolved() =>
         Assert.False(SourceCatalog.TryResolve("https://example.org/x", out _));
 }
