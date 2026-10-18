@@ -1,6 +1,7 @@
 using Pipeline.Contracts;
 using Pipeline.Core.Identity;
 using Pipeline.Core.Storage;
+using Pipeline.Core.Tests;
 using Pipeline.Core.Submission;
 
 namespace Pipeline.Core.Tests.Submission;
@@ -144,48 +145,5 @@ public class ArticleSubmissionTests
         Assert.Equal(SubmissionStatus.Duplicate, Assert.Single(response.Results).Status);
         Assert.Empty(_parsed.Saved);
         Assert.Single(_queue.Sent);
-    }
-
-    private sealed class InMemoryLedger : ILedgerStore
-    {
-        public Dictionary<string, LedgerRecord> Records { get; } = [];
-
-        public Task<bool> TryCreateAsync(LedgerRecord record, CancellationToken ct = default) =>
-            Task.FromResult(Records.TryAdd(record.Id, record));
-
-        public Task<LedgerRecord?> GetAsync(string articleId, CancellationToken ct = default) =>
-            Task.FromResult(Records.GetValueOrDefault(articleId));
-
-        public Task RecordStageAsync(string articleId, Stage stage, StageResult result, CancellationToken ct = default)
-        {
-            var record = Records[articleId];
-            Records[articleId] = record with { Stages = new Dictionary<Stage, StageResult>(record.Stages) { [stage] = result } };
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class InMemoryParsed : IParsedStore
-    {
-        public List<ParsedArticle> Saved { get; } = [];
-
-        public Task SaveAsync(ParsedArticle parsed, CancellationToken ct = default)
-        {
-            Saved.Add(parsed);
-            return Task.CompletedTask;
-        }
-
-        public Task<ParsedArticle?> GetLatestAsync(string articleId, CancellationToken ct = default) =>
-            Task.FromResult(Saved.LastOrDefault(p => p.ArticleId == articleId));
-    }
-
-    private sealed class RecordingQueue : IQueueSender
-    {
-        public List<(string Queue, object? Message)> Sent { get; } = [];
-
-        public Task SendAsync<T>(string queueName, T message, CancellationToken ct = default)
-        {
-            Sent.Add((queueName, message));
-            return Task.CompletedTask;
-        }
     }
 }
