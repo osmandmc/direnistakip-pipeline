@@ -16,7 +16,7 @@ Status: ☐ open · ◐ in progress · ☑ done
 
 | # | Task | Deliverable | Done when | Who |
 |---|---|---|---|---|
-| ☐ T4 | Fetch spike | Temporary function fetching ~20 articles per source from Azure; findings note | Blocking / JS rendering / URL patterns known per source; `SourceCatalog` and canonicalisation tests updated | Claude, you trigger |
+| ◐ T4 | Fetch spike | Temporary function fetching ~20 articles per source from Azure; findings note | Blocking / JS rendering / URL patterns known per source; `SourceCatalog` and canonicalisation tests updated | Claude, you trigger |
 | ☐ T5 | Storage layer | `Pipeline.Infrastructure`: ledger store, record store, raw HTML store, queue sender behind Core interfaces | Integration tests pass against local emulators | Claude |
 | ☐ T6 | SubmitArticles | `POST /articles` (batch of URLs + optional title/date) → ledger + `article-submitted` | Resubmitting the same URL is a no-op | Claude |
 | ☐ T7 | Fetch | Queue function: polite HTTP client, per-source rate limit, gzip HTML to blob | Spike articles fetched end to end in Azure | Claude |

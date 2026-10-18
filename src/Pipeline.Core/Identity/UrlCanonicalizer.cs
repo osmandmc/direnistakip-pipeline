@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 namespace Pipeline.Core.Identity;
 
@@ -6,10 +7,17 @@ namespace Pipeline.Core.Identity;
 /// The one canonicalisation function (D-002, D-024). Article identity depends on its output:
 /// changing a rule changes ArticleIds, so every change needs a decision entry and a test row.
 /// </summary>
-public static class UrlCanonicalizer
+public static partial class UrlCanonicalizer
 {
     // Host prefixes that serve the same article as the bare host.
     private static readonly string[] HostPrefixes = ["www.", "m.", "mobil.", "amp."];
+
+    // Sources that move between numbered domains (e.g. kizilbayrak85.net after access blocks).
+    private static readonly (Regex Pattern, string Host)[] HostAliases =
+    [
+        (KizilbayrakHost(), "kizilbayrak.net"),
+        (SendikaHost(), "sendika.org"),
+    ];
 
     private static readonly string[] TrackingParamPrefixes = ["utm_"];
 
@@ -35,6 +43,14 @@ public static class UrlCanonicalizer
             if (host.StartsWith(prefix, StringComparison.Ordinal))
             {
                 host = host[prefix.Length..];
+                break;
+            }
+        }
+        foreach (var (pattern, alias) in HostAliases)
+        {
+            if (pattern.IsMatch(host))
+            {
+                host = alias;
                 break;
             }
         }
@@ -65,6 +81,12 @@ public static class UrlCanonicalizer
     private static bool IsTracking(string key) =>
         TrackingParams.Contains(key)
         || TrackingParamPrefixes.Any(p => key.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+
+    [GeneratedRegex(@"^kizilbayrak\d*\.net$")]
+    private static partial Regex KizilbayrakHost();
+
+    [GeneratedRegex(@"^sendika\d*\.org$")]
+    private static partial Regex SendikaHost();
 
     private static IEnumerable<KeyValuePair<string, string>> ParseQuery(string query) =>
         query.TrimStart('?')

@@ -11,6 +11,10 @@ public class UrlCanonicalizerTests
     [InlineData("https://WWW.BirGun.net/haber/x", "https://birgun.net/haber/x")]
     [InlineData("https://m.sendika.org/2026/10/x/", "https://sendika.org/2026/10/x")]
     [InlineData("https://amp.birgun.net/haber/x", "https://birgun.net/haber/x")]
+    // Numbered mirror domains map to the source's main host (seen in T4: kizilbayrak.net → kizilbayrak85.net)
+    [InlineData("https://kizilbayrak85.net/ana-sayfa/haber/guncel/x", "https://kizilbayrak.net/ana-sayfa/haber/guncel/x")]
+    [InlineData("http://www.kizilbayrak54.net/ana-sayfa/haber/guncel/x", "https://kizilbayrak.net/ana-sayfa/haber/guncel/x")]
+    [InlineData("https://sendika63.org/2020/01/x-123", "https://sendika.org/2020/01/x-123")]
     // AMP path suffix, trailing slash, fragment, default port
     [InlineData("https://evrensel.net/haber/1/x/amp", "https://evrensel.net/haber/1/x")]
     [InlineData("https://evrensel.net/haber/1/x/#yorumlar", "https://evrensel.net/haber/1/x")]
@@ -18,6 +22,8 @@ public class UrlCanonicalizerTests
     // Tracking parameters removed, others kept and sorted
     [InlineData("https://birgun.net/haber/x?utm_source=tw&utm_medium=social", "https://birgun.net/haber/x")]
     [InlineData("https://birgun.net/haber/x?fbclid=abc", "https://birgun.net/haber/x")]
+    // Evrensel RSS links carry tracking tags (seen in T4)
+    [InlineData("https://www.evrensel.net/haber/6005412/x?utm_source=rss_feed&utm_medium=rss&utm_campaign=rss_syndication", "https://evrensel.net/haber/6005412/x")]
     [InlineData("https://kizilbayrak.net/?p=42&utm_campaign=y", "https://kizilbayrak.net?p=42")]
     [InlineData("https://example.org/a?b=2&a=1", "https://example.org/a?a=1&b=2")]
     // Path case is preserved (paths can be case-sensitive)
