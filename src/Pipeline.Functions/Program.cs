@@ -1,12 +1,10 @@
 using System.Net;
-using Azure.Identity;
-using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Pipeline.Functions.Http;
+using Pipeline.Infrastructure;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -30,14 +28,7 @@ builder.Services
         MaxAutomaticRedirections = 5,
     });
 
-// In Azure: managed identity (AzureWebJobsStorage__accountName). Locally: connection string (Azurite).
-builder.Services.AddSingleton(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    var account = config["AzureWebJobsStorage:accountName"];
-    return string.IsNullOrEmpty(account)
-        ? new BlobServiceClient(config["AzureWebJobsStorage"])
-        : new BlobServiceClient(new Uri($"https://{account}.blob.core.windows.net"), new DefaultAzureCredential());
-});
+// Ledger, raw HTML, parsed records and queues (managed identity in Azure, emulators locally).
+builder.Services.AddPipelineStorage(builder.Configuration);
 
 builder.Build().Run();
