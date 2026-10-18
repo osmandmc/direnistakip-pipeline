@@ -45,7 +45,8 @@ public sealed class ArticleSubmission(ILedgerStore ledger, IParsedStore parsed, 
         var now = clock.GetUtcNow();
         var record = new LedgerRecord(
             articleId, source.Id, origin, url,
-            new Dictionary<Stage, StageResult> { [Stage.Submitted] = new(StageStatus.Succeeded, now) });
+            new Dictionary<Stage, StageResult> { [Stage.Submitted] = new(StageStatus.Succeeded, now) },
+            ListDate: TurkeyTime.Normalize(now));
 
         // Known article (also a repeat within the same batch): nothing changes.
         if (!await ledger.TryCreateAsync(record, ct))
@@ -80,6 +81,7 @@ public sealed class ArticleSubmission(ILedgerStore ledger, IParsedStore parsed, 
             RawHtmlPath: null, article.Title?.Trim(), article.PublishedAt, article.Content!.Trim());
 
         await parsed.SaveAsync(record, ct);
+        await ledger.SetSummaryAsync(articleId, record.Title, record.PublishedAt, ct);
         await ledger.RecordStageAsync(articleId, Stage.Parsed, new StageResult(StageStatus.Succeeded, now, version), ct);
         await queue.SendAsync(QueueNames.ArticleParsed, new ArticleParsed(articleId, sourceId, record.Id, version, now), ct);
     }

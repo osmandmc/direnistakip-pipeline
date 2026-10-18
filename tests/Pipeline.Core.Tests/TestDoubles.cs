@@ -23,6 +23,41 @@ internal sealed class InMemoryLedger : ILedgerStore
         Records[articleId] = record with { Stages = new Dictionary<Stage, StageResult>(record.Stages) { [stage] = result } };
         return Task.CompletedTask;
     }
+
+    public Task SetSummaryAsync(string articleId, string? title, DateTimeOffset? publishedAt, CancellationToken ct = default)
+    {
+        var record = Records[articleId];
+        var date = publishedAt is { } d ? TurkeyTime.Normalize(d) : (DateTimeOffset?)null;
+        Records[articleId] = record with
+        {
+            Title = title ?? record.Title,
+            PublishedAt = date ?? record.PublishedAt,
+            ListDate = date ?? record.ListDate,
+        };
+        return Task.CompletedTask;
+    }
+
+    // Same filters and order as the Cosmos query; "next" is simply the offset of the next page.
+    public Task<LedgerPage> QueryAsync(LedgerQuery query, int pageSize, string? continuation, CancellationToken ct = default)
+    {
+        var matches = Records.Values
+            .Where(r => r.ListDate is not null)
+            .Where(r => query.SourceId is null || r.SourceId == query.SourceId)
+            .Where(r => query.From is null || r.ListDate >= query.From)
+            .Where(r => query.Before is null || r.ListDate < query.Before)
+            .Where(r => query.Status switch
+            {
+                ArticleStatusFilter.Parsed => r.Stages.TryGetValue(Stage.Parsed, out var p) && p.Status == StageStatus.Succeeded,
+                ArticleStatusFilter.Failed => r.Stages.Values.Any(s => s.Status == StageStatus.Failed),
+                _ => true,
+            })
+            .OrderByDescending(r => r.ListDate)
+            .ToList();
+        var offset = continuation is null ? 0 : int.Parse(continuation);
+        var items = matches.Skip(offset).Take(pageSize).ToList();
+        var next = offset + items.Count < matches.Count ? (offset + items.Count).ToString() : null;
+        return Task.FromResult(new LedgerPage(items, next));
+    }
 }
 
 internal sealed class InMemoryParsed : IParsedStore

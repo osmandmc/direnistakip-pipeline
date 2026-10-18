@@ -15,9 +15,6 @@ public sealed partial class EvrenselParser : IArticleParser
 {
     private static readonly HtmlParser Html = new();
 
-    // Turkey has used a fixed UTC+3 offset since 2016.
-    private static readonly TimeSpan TurkeyOffset = TimeSpan.FromHours(3);
-
     public string SourceId => "evrensel";
 
     public string Version => "evrensel-1";
@@ -128,7 +125,7 @@ public sealed partial class EvrenselParser : IArticleParser
                 : null;
         }
         return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var local)
-            ? new DateTimeOffset(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), TurkeyOffset)
+            ? new DateTimeOffset(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), TurkeyTime.Offset)
             : null;
     }
 

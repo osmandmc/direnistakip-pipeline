@@ -59,6 +59,7 @@ public sealed class ArticleParsing(
             article.RawHtmlPath, result.Title, result.PublishedAt, result.Body!);
 
         await parsed.SaveAsync(parsedArticle, ct);
+        await ledger.SetSummaryAsync(article.ArticleId, result.Title, result.PublishedAt, ct);
         await ledger.RecordStageAsync(article.ArticleId, Stage.Parsed, new StageResult(StageStatus.Succeeded, now, parser.Version), ct);
         await queue.SendAsync(
             QueueNames.ArticleParsed,

@@ -24,7 +24,7 @@ One source all the way from link to parsed article, before adding the others. En
 | ☑ E3b | SubmitArticles with content | Rows with `content` (Evrensel CSV: Url, Title, Content, Date) are saved as the parsed record (`provided:csv`, no raw HTML); ledger Submitted + Parsed; queued to `article-parsed`. Rows without content go to Fetch as before | A CSV-style row shows as Parsed with its text | Claude, you try |
 | ☑ E4 | Fetch (was T7) | Queue function: downloads the page, saves raw HTML, updates the ledger; failures recorded with a reason. Restore the deploy smoke test (host from a GitHub variable) | Ledger shows `Fetched` and the file is in blob storage; a bad URL shows `Failed` + reason | Claude, you try |
 | ☑ E5 | Parse Evrensel (was T8, one source) | Evrensel parser (title, date, body) with a version tag; tests on 5–6 trimmed samples | Parsed record in Cosmos for a submitted article | Claude, you try |
-| ☐ E6 | Read API (was T10, part) | `GET /articles` and `GET /articles/{id}` with stage status | One request shows the whole flow for an article | Claude, you try |
+| ☑ E6 | Read API (was T10, part) | `GET /articles` and `GET /articles/{id}` with stage status | One request shows the whole flow for an article | Claude, you try |
 | ☐ E7 | Evrensel RSS timer (was phase 5) | Timer reads the feed and submits new links; deployed **switched off** | Turned on only when you decide | Claude |
 
 ## Phase 2b — Rest of the walking skeleton
