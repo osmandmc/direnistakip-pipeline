@@ -12,24 +12,33 @@ Status: ☐ open · ◐ in progress · ☑ done
 | ☑ T2 | Azure bootstrap | `infra/bootstrap/` (Bicep): resource group, managed identity with OIDC federated credentials, role assignments; README setup steps; workflow guards | Template reviewed | Claude |
 | ☑ T3 | Run bootstrap + first deploy | Infra and Function App deployed | `/api/health` returns ok; budget alert exists | **You** run, Claude fixes |
 
-## Phase 2 — Walking skeleton (no AI)
+## Phase 2a — Evrensel end to end (no AI)
+
+One source all the way from link to parsed article, before adding the others. Entry is manual first.
 
 | # | Task | Deliverable | Done when | Who |
 |---|---|---|---|---|
-| ◐ T4 | Fetch spike | Temporary function fetching ~20 articles per source from Azure; findings note | Blocking / JS rendering / URL patterns known per source; `SourceCatalog` and canonicalisation tests updated | Claude, you trigger |
-| ☐ T5 | Storage layer | `Pipeline.Infrastructure`: ledger store, record store, raw HTML store, queue sender behind Core interfaces | Integration tests pass against local emulators | Claude |
-| ☐ T6 | SubmitArticles | `POST /articles` (batch of URLs + optional title/date) → ledger + `article-submitted` | Resubmitting the same URL is a no-op | Claude |
-| ☐ T7 | Fetch | Queue function: polite HTTP client, per-source rate limit, gzip HTML to blob. Restore the deploy smoke test (host from a GitHub variable, not `az functionapp show`) | Spike articles fetched end to end in Azure | Claude |
-| ☐ T8 | Parse | Per-source parsers (title, date, body), parser version on record | Parse tests pass on saved spike HTML for all 4 sources | Claude |
-| ☐ T9 | Failures + rollups | RecordFailure on poison queues; daily Rollups timer | Failed article shows reason in ledger; rollup counts match ledger | Claude |
-| ☐ T10 | Read API | `GET /articles`, `GET /metrics` with function keys | App can list articles and funnel counts | Claude |
-| ☐ T11 | Contracts package | `contracts.yml`, package published | App can reference it (framework checked) | Claude, **you** confirm app framework |
-| ☐ T12 | App: `News` backfill | Script / migration adding `ArticleId`, duplicate report | Duplicates resolved | **You** (app repo access), Claude drafts |
-| ☐ T13 | App: CSV → pipeline + funnel screen | Upload sends to `POST /articles`; dashboard reads `/metrics` | A real CSV flows through to "Parsed" and shows in the funnel | **You** (app repo), Claude drafts |
+| ☑ E1 | Close the fetch spike (was T4) | Findings note: Evrensel works from Azure; BirGün blocked by Cloudflare; Sendika and Kızılbayrak deferred | Note reviewed | Claude |
+| ☐ E2 | Storage (was T5) | `Pipeline.Infrastructure`: ledger store, parsed-record store, raw HTML store (gzip), queue sender, behind Core interfaces | Tests pass against local emulators | Claude |
+| ☐ E3 | SubmitArticles (was T6) | `POST /articles` (URLs + optional title/date) → ledger record + `article-submitted` message | Sending an Evrensel URL creates its ledger record; sending it again changes nothing | Claude, you try |
+| ☐ E4 | Fetch (was T7) | Queue function: downloads the page, saves raw HTML, updates the ledger; failures recorded with a reason. Restore the deploy smoke test (host from a GitHub variable) | Ledger shows `Fetched` and the file is in blob storage; a bad URL shows `Failed` + reason | Claude, you try |
+| ☐ E5 | Parse Evrensel (was T8, one source) | Evrensel parser (title, date, body) with a version tag; tests on 5–6 trimmed samples | Parsed record in Cosmos for a submitted article | Claude, you try |
+| ☐ E6 | Read API (was T10, part) | `GET /articles` and `GET /articles/{id}` with stage status | One request shows the whole flow for an article | Claude, you try |
+| ☐ E7 | Evrensel RSS timer (was phase 5) | Timer reads the feed and submits new links; deployed **switched off** | Turned on only when you decide | Claude |
+
+## Phase 2b — Rest of the walking skeleton
+
+| # | Task | Notes |
+|---|---|---|
+| ☐ T9 | Rollups + funnel metrics | Daily counts by source and stage; `GET /metrics` |
+| ☐ T11 | Contracts package | **You** confirm the app's target framework |
+| ☐ T12 | App: `News` backfill | **You** (app repo access), Claude drafts |
+| ☐ T13 | App: CSV → pipeline + funnel screen | **You** (app repo), Claude drafts |
+| ☐ S1 | Other sources | Kızılbayrak and Sendika: run the spike from Azure, then parsers. BirGün: blocked until access is granted (**you / the group** contact BirGün) |
 
 ## Phase 3 — Extraction and pre-fill (planned at the end of phase 2)
 
-Inputs needed first: form field inventory (open #1), colleague's prototype review (D-018), LLM provider choice (open #7), privacy rules (open #9).
+Inputs needed first (can be gathered during phase 2): form field inventory (open #1), colleague's prototype review (D-018), LLM provider choice (open #7), privacy rules (open #9), **Evrensel's `ai-input=no` signal** (open #8).
 
 Outline: draft contract → Eval tool on the test set → Extract → Validate → draft/outcome API → app review screen, `ArticleReview`, case matching, outcome sender.
 
