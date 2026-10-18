@@ -43,7 +43,7 @@ Follow-up from a home connection showed the block is about the **user agent**, n
 
 BirGün's Cloudflare setup lets only browser-like clients through, for the feed and article pages alike. Its robots.txt allows all crawlers, so this is likely a broad anti-bot setting rather than a decision against this use.
 
-**Proposed (to confirm): do not disguise the client.** Sending a browser user agent would work around a protection the site put in place. Instead, the group asks BirGün to allow the project's user agent (Cloudflare makes this easy for site owners); until then BirGün cases are entered by hand. BirGün stays in the spike's source list for a re-test once access is granted.
+**Proposed (to confirm): do not disguise the client.** Sending a browser user agent would work around a protection the site put in place. Instead, the group asks BirGün to allow the project's user agent (Cloudflare makes this easy for site owners); until then BirGün cases are entered by hand. Once access is granted, re-test with the project user agent (the spike function itself was removed in E5).
 
 ## Outcome
 
