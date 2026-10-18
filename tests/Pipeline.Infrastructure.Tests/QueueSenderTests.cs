@@ -21,5 +21,6 @@ public class QueueSenderTests(EmulatorFixture emulators)
         var json = received.Body.ToString(); // decoded from Base64 by the client options
         Assert.Contains("\"origin\":\"Manual\"", json);
         Assert.Equal(sent, JsonSerializer.Deserialize<ArticleSubmitted>(json, StorageClients.Json));
+        Assert.True(received.ExpiresOn > DateTimeOffset.UtcNow.AddYears(1), "messages should not expire after the default 7 days");
     }
 }

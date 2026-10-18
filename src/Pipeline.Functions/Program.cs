@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Pipeline.Core.Submission;
 using Pipeline.Functions.Http;
 using Pipeline.Infrastructure;
 
@@ -30,5 +31,8 @@ builder.Services
 
 // Ledger, raw HTML, parsed records and queues (managed identity in Azure, emulators locally).
 builder.Services.AddPipelineStorage(builder.Configuration);
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ArticleSubmission>();
 
 builder.Build().Run();
