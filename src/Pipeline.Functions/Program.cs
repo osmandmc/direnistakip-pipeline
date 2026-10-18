@@ -2,6 +2,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Pipeline.Core.Articles;
 using Pipeline.Core.Fetching;
 using Pipeline.Core.Parsing;
 using Pipeline.Core.Submission;
@@ -28,5 +29,8 @@ builder.Services.AddSingleton<ArticleSubmission>();
 // One parser per enabled source.
 builder.Services.AddSingleton<IArticleParser, EvrenselParser>();
 builder.Services.AddSingleton<ArticleParsing>();
+
+// Read API (D-009).
+builder.Services.AddSingleton<ArticleQueries>();
 
 builder.Build().Run();

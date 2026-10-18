@@ -28,11 +28,19 @@ public sealed record StageResult(
     string? Version = null,
     string? Reason = null);
 
-/// <summary>One record per article (D-015). Id is the ArticleId and the partition key (D-020).</summary>
+/// <summary>
+/// One record per article (D-015). Id is the ArticleId and the partition key (D-020).
+/// Title and PublishedAt are copied here when the article is parsed, so lists need only the ledger
+/// (Cosmos cannot join containers). ListDate orders lists: the publication date once known,
+/// otherwise the submission time; always Turkey time so it sorts correctly as text.
+/// </summary>
 public sealed record LedgerRecord(
     string Id,
     string SourceId,
     ArticleOrigin Origin,
     string Url,
     IReadOnlyDictionary<Stage, StageResult> Stages,
-    ArticleOutcome? Outcome = null);
+    ArticleOutcome? Outcome = null,
+    string? Title = null,
+    DateTimeOffset? PublishedAt = null,
+    DateTimeOffset? ListDate = null);

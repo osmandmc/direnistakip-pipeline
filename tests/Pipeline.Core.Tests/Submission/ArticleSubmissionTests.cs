@@ -31,6 +31,7 @@ public class ArticleSubmissionTests
 
         var record = _ledger.Records[result.ArticleId!];
         Assert.Equal("evrensel", record.SourceId);
+        Assert.Equal(TurkeyTime.Offset, record.ListDate!.Value.Offset); // submission time until the date is known
         Assert.Equal(ArticleOrigin.Csv, record.Origin);
         Assert.Equal(StageStatus.Succeeded, record.Stages[Stage.Submitted].Status);
 
@@ -115,6 +116,9 @@ public class ArticleSubmissionTests
 
         var record = _ledger.Records[result.ArticleId!];
         Assert.Equal([Stage.Submitted, Stage.Parsed], record.Stages.Keys.Order());
+        Assert.Equal("Başlık", record.Title);   // copied for the inbox list
+        Assert.Equal(date, record.PublishedAt);
+        Assert.Equal(date, record.ListDate);
         Assert.Equal("provided:csv", record.Stages[Stage.Parsed].Version);
 
         // Skips Fetch: goes straight to the queue after parsing.

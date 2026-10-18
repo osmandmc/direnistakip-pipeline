@@ -1,6 +1,8 @@
 using System.Net;
+using System.Text;
 using Microsoft.Azure.Cosmos;
 using Pipeline.Contracts;
+using Pipeline.Core;
 using Pipeline.Core.Storage;
 
 namespace Pipeline.Infrastructure;
@@ -44,4 +46,112 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
             [PatchOperation.Set($"/stages/{stage}", result)],
             new PatchItemRequestOptions { EnableContentResponseOnWrite = false },
             ct);
+
+    public async Task SetSummaryAsync(string articleId, string? title, DateTimeOffset? publishedAt, CancellationToken ct = default)
+    {
+        var operations = new List<PatchOperation>();
+        if (title is not null)
+        {
+            operations.Add(PatchOperation.Set("/title", title));
+        }
+        if (publishedAt is { } date)
+        {
+            var turkey = TurkeyTime.Normalize(date);
+            operations.Add(PatchOperation.Set("/publishedAt", turkey));
+            operations.Add(PatchOperation.Set("/listDate", turkey));
+        }
+        if (operations.Count > 0)
+        {
+            await container.PatchItemAsync<LedgerRecord>(
+                articleId, new PartitionKey(articleId), operations,
+                new PatchItemRequestOptions { EnableContentResponseOnWrite = false }, ct);
+        }
+    }
+
+    public async Task<LedgerPage> QueryAsync(LedgerQuery query, int pageSize, string? continuation, CancellationToken ct = default)
+    {
+        // Records created before list dates existed have none and are left out.
+        var sql = new StringBuilder("SELECT * FROM c WHERE IS_DEFINED(c.listDate)");
+        var parameters = new List<(string Name, object Value)>();
+        if (query.SourceId is not null)
+        {
+            sql.Append(" AND c.sourceId = @source");
+            parameters.Add(("@source", query.SourceId));
+        }
+        // Dates are compared as text, so they must be in the same form as stored: Turkey time, whole seconds.
+        if (query.From is { } from)
+        {
+            sql.Append(" AND c.listDate >= @from");
+            parameters.Add(("@from", TurkeyTime.Normalize(from)));
+        }
+        if (query.Before is { } before)
+        {
+            sql.Append(" AND c.listDate < @before");
+            parameters.Add(("@before", TurkeyTime.Normalize(before)));
+        }
+        sql.Append(query.Status switch
+        {
+            ArticleStatusFilter.Parsed => $" AND c.stages.{Stage.Parsed}.status = '{StageStatus.Succeeded}'",
+            ArticleStatusFilter.Failed => " AND (" + string.Join(" OR ",
+                Enum.GetValues<Stage>().Select(stage => $"c.stages.{stage}.status = '{StageStatus.Failed}'")) + ")",
+            _ => "",
+        });
+        sql.Append(" ORDER BY c.listDate DESC");
+
+        var definition = new QueryDefinition(sql.ToString());
+        foreach (var (name, value) in parameters)
+        {
+            definition = definition.WithParameter(name, value);
+        }
+
+        using var results = container.GetItemQueryIterator<LedgerRecord>(
+            definition,
+            ContinuationToken.Decode(continuation),
+            new QueryRequestOptions { MaxItemCount = pageSize, ResponseContinuationTokenLimitInKb = 4 });
+
+        // A query across partitions can return an empty page that still has more behind it.
+        FeedResponse<LedgerRecord>? page = null;
+        try
+        {
+            while (results.HasMoreResults)
+            {
+                page = await results.ReadNextAsync(ct);
+                if (page.Count > 0)
+                {
+                    break;
+                }
+            }
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.BadRequest && continuation is not null)
+        {
+            throw new ArgumentException("Invalid 'next' value.", nameof(continuation), ex);
+        }
+        return page is null
+            ? new LedgerPage([], null)
+            : new LedgerPage(page.ToList(), ContinuationToken.Encode(page.ContinuationToken));
+    }
+}
+
+/// <summary>Cosmos continuation tokens are JSON; the API passes them as URL-safe Base64 ("next").</summary>
+internal static class ContinuationToken
+{
+    public static string? Encode(string? token) =>
+        token is null ? null : Convert.ToBase64String(Encoding.UTF8.GetBytes(token)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    public static string? Decode(string? next)
+    {
+        if (string.IsNullOrEmpty(next))
+        {
+            return null;
+        }
+        var base64 = next.Replace('-', '+').Replace('_', '/');
+        try
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=')));
+        }
+        catch (FormatException)
+        {
+            throw new ArgumentException("Invalid 'next' value.", nameof(next));
+        }
+    }
 }

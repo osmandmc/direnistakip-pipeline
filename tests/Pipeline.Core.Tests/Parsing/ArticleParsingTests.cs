@@ -53,6 +53,7 @@ public class ArticleParsingTests
 
         Assert.Equal(StageStatus.Succeeded, Parsed.Status);
         Assert.Equal("evrensel-1", Parsed.Version);
+        Assert.Equal("Başlık", _ledger.Records[ArticleId].Title); // copied for the inbox list
 
         var (queueName, message) = Assert.Single(_queue.Sent);
         Assert.Equal(QueueNames.ArticleParsed, queueName);
