@@ -7,11 +7,16 @@ public sealed record SubmitArticlesRequest(
     IReadOnlyList<ArticleToSubmit> Articles,
     ArticleOrigin Origin = ArticleOrigin.Manual);
 
-/// <summary>Title and date are optional; the CSV upload may know them before the page is parsed.</summary>
+/// <summary>
+/// An article to take in. With <see cref="Content"/> (e.g. Evrensel's CSV: Url, Title, Content, Date) it enters
+/// already parsed and skips Fetch and Parse. Without it, the pipeline fetches and parses the page itself.
+/// Dates without a time zone should be sent as Turkey time (+03:00).
+/// </summary>
 public sealed record ArticleToSubmit(
     string Url,
     string? Title = null,
-    DateTimeOffset? PublishedAt = null);
+    DateTimeOffset? PublishedAt = null,
+    string? Content = null);
 
 [JsonConverter(typeof(JsonStringEnumConverter<SubmissionStatus>))]
 public enum SubmissionStatus

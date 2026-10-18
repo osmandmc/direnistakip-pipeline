@@ -1,8 +1,8 @@
 namespace Pipeline.Contracts;
 
 /// <summary>
-/// Output of the Parse stage (D-003): one record per parse, never overwritten.
-/// A newer parser version creates a new record next to the old one.
+/// An article's text (D-003): one record per parse, never overwritten. Made by our parser from raw HTML,
+/// or provided with the submission (ParserVersion "provided:csv", no raw HTML).
 /// </summary>
 public sealed record ParsedArticle(
     string Id,
@@ -10,7 +10,7 @@ public sealed record ParsedArticle(
     string SourceId,
     string ParserVersion,
     DateTimeOffset ParsedAt,
-    string RawHtmlPath,
+    string? RawHtmlPath,
     string? Title,
     DateTimeOffset? PublishedAt,
     string Body);

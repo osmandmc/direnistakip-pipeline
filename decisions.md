@@ -71,6 +71,7 @@ Diagrams, roadmap and cost options: [architecture.md](architecture.md).
 ## D-002 — Article identity = hash of canonical URL; entry points are adapters
 **Decision.** `ArticleId` = hash of the canonicalised URL (one shared function). Every entry point (CSV, collector, manual) emits the same `ArticleSubmitted` message. The app's `News` table is a thin projection keyed by `ArticleId` (URL, title, publisher, date; no text).
 **Consequences.** Retiring the upload = removing an adapter. Existing `News` rows must be backfilled and de-duplicated first.
+**Update (E3b).** A submission may carry the article's content (Evrensel's CSV: Url, Title, Content, Date). It then enters already parsed (`provided:csv`) and skips Fetch and Parse; no raw HTML is kept for it, so it cannot be re-parsed (D-003).
 
 ## D-003 — Stage outputs stored separately, immutable, versioned
 **Decision.** Raw HTML (compressed, Blob), parsed content, relevance and draft are separate records, each tagged with parser/prompt/model/schema version. Never overwritten; re-runs create new records.

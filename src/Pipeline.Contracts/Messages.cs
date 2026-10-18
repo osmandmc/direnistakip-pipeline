@@ -22,3 +22,11 @@ public sealed record ArticleSubmitted(
     DateTimeOffset SubmittedAt,
     string? Title = null,
     DateTimeOffset? PublishedAt = null);
+
+/// <summary>Sent when an article's text is available, by Parse or by a submission with content.</summary>
+public sealed record ArticleParsed(
+    string ArticleId,
+    string SourceId,
+    string ParsedId,
+    string ParserVersion,
+    DateTimeOffset ParsedAt);
