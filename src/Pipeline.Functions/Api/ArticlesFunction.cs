@@ -10,7 +10,7 @@ namespace Pipeline.Functions.Api;
 
 /// <summary>
 /// Read API for the direnistakip app (D-009). Requires a function key (D-025).
-/// <c>GET /api/articles?from=2026-10-01&amp;to=2026-10-31&amp;source=evrensel&amp;status=parsed&amp;pageSize=20&amp;next=…</c>
+/// <c>GET /api/articles?from=2026-10-01&amp;to=2026-10-31&amp;source=evrensel&amp;status=parsed&amp;outcome=open&amp;pageSize=20&amp;next=…</c>
 /// <c>GET /api/articles/{id}</c>
 /// </summary>
 public sealed class ArticlesFunction(ArticleQueries queries)
@@ -29,6 +29,11 @@ public sealed class ArticlesFunction(ArticleQueries queries)
         {
             return Error("'status' is one of: parsed, failed, all");
         }
+        var outcome = OutcomeFilter.Open;
+        if (req.Query["outcome"] is { Count: > 0 } outcomeText && !Enum.TryParse(outcomeText.ToString(), ignoreCase: true, out outcome))
+        {
+            return Error("'outcome' is one of: open, handled, any");
+        }
         var pageSize = ArticleQueries.DefaultPageSize;
         if (req.Query["pageSize"] is { Count: > 0 } sizeText && !int.TryParse(sizeText, out pageSize))
         {
@@ -39,7 +44,8 @@ public sealed class ArticlesFunction(ArticleQueries queries)
             SourceId: req.Query["source"] is { Count: > 0 } source ? source.ToString() : null,
             From: from is { } f ? TurkeyTime.StartOfDay(f) : null,
             Before: to is { } t ? TurkeyTime.StartOfDay(t.AddDays(1)) : null, // "to" includes the whole day
-            Status: status);
+            Status: status,
+            Outcome: outcome);
 
         try
         {

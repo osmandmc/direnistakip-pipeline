@@ -32,5 +32,6 @@ builder.Services.AddSingleton<ArticleParsing>();
 
 // Read API (D-009).
 builder.Services.AddSingleton<ArticleQueries>();
+builder.Services.AddSingleton<ArticleOutcomes>();
 
 builder.Build().Run();
