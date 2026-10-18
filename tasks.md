@@ -19,7 +19,7 @@ One source all the way from link to parsed article, before adding the others. En
 | # | Task | Deliverable | Done when | Who |
 |---|---|---|---|---|
 | ☑ E1 | Close the fetch spike (was T4) | Findings note: Evrensel works from Azure; BirGün blocked by Cloudflare; Sendika and Kızılbayrak deferred | Note reviewed | Claude |
-| ☐ E2 | Storage (was T5) | `Pipeline.Infrastructure`: ledger store, parsed-record store, raw HTML store (gzip), queue sender, behind Core interfaces | Tests pass against local emulators | Claude |
+| ☑ E2 | Storage (was T5) | `Pipeline.Infrastructure`: ledger store, parsed-record store, raw HTML store (gzip), queue sender, behind Core interfaces | Tests pass against local emulators | Claude |
 | ☐ E3 | SubmitArticles (was T6) | `POST /articles` (URLs + optional title/date) → ledger record + `article-submitted` message | Sending an Evrensel URL creates its ledger record; sending it again changes nothing | Claude, you try |
 | ☐ E4 | Fetch (was T7) | Queue function: downloads the page, saves raw HTML, updates the ledger; failures recorded with a reason. Restore the deploy smoke test (host from a GitHub variable) | Ledger shows `Fetched` and the file is in blob storage; a bad URL shows `Failed` + reason | Claude, you try |
 | ☐ E5 | Parse Evrensel (was T8, one source) | Evrensel parser (title, date, body) with a version tag; tests on 5–6 trimmed samples | Parsed record in Cosmos for a submitted article | Claude, you try |
