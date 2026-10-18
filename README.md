@@ -9,7 +9,8 @@ Collects labour news articles and pre-fills case drafts for review in the direni
 | `src/Pipeline.Contracts` | Messages and API DTOs (NuGet for the app) |
 | `src/Pipeline.Core` | Domain logic, no Azure references |
 | `src/Pipeline.Functions` | Function App: stages and HTTP API |
-| `tests/` | Tests |
+| `tests/` | Tests (`Pipeline.Infrastructure.Tests` needs Docker running) |
+| `tools/FixtureTrimmer` | Trims saved pages into parser test fixtures: `dotnet run --project tools/FixtureTrimmer -- page.html fixture.html` |
 | `infra/` | Bicep |
 | `.github/workflows/` | CI/CD |
 

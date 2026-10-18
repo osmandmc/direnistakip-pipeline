@@ -19,6 +19,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pipeline.Infrastructure", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pipeline.Infrastructure.Tests", "tests\Pipeline.Infrastructure.Tests\Pipeline.Infrastructure.Tests.csproj", "{9426251C-8138-4ACD-B7F0-A862C807978E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{78A7FEF1-7892-489F-9B60-AB0BAAF51437}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FixtureTrimmer", "tools\FixtureTrimmer\FixtureTrimmer.csproj", "{C7D69D03-E5AA-4EE3-BE3E-79E11C3E8712}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +56,10 @@ Global
 		{9426251C-8138-4ACD-B7F0-A862C807978E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9426251C-8138-4ACD-B7F0-A862C807978E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9426251C-8138-4ACD-B7F0-A862C807978E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7D69D03-E5AA-4EE3-BE3E-79E11C3E8712}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7D69D03-E5AA-4EE3-BE3E-79E11C3E8712}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7D69D03-E5AA-4EE3-BE3E-79E11C3E8712}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7D69D03-E5AA-4EE3-BE3E-79E11C3E8712}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{40EF24DA-4D7A-48DF-84CA-37AD463D02BE} = {61AECC56-48BE-4CDB-966A-1CDD0AB86596}
@@ -60,5 +68,6 @@ Global
 		{ECBDB8BD-5123-4EA7-B85F-202A10F0AA89} = {33E3A614-6445-4BB0-993D-B96F233B925E}
 		{BA116A9C-F804-46D8-A3F4-7E637D5BAB9D} = {61AECC56-48BE-4CDB-966A-1CDD0AB86596}
 		{9426251C-8138-4ACD-B7F0-A862C807978E} = {33E3A614-6445-4BB0-993D-B96F233B925E}
+		{C7D69D03-E5AA-4EE3-BE3E-79E11C3E8712} = {78A7FEF1-7892-489F-9B60-AB0BAAF51437}
 	EndGlobalSection
 EndGlobal
