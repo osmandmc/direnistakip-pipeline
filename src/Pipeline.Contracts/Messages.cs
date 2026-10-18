@@ -23,6 +23,14 @@ public sealed record ArticleSubmitted(
     string? Title = null,
     DateTimeOffset? PublishedAt = null);
 
+/// <summary>Sent by Fetch when the page is saved; Parse reads it from <see cref="RawHtmlPath"/>.</summary>
+public sealed record ArticleFetched(
+    string ArticleId,
+    string SourceId,
+    string RawHtmlPath,
+    string FinalUrl,
+    DateTimeOffset FetchedAt);
+
 /// <summary>Sent when an article's text is available, by Parse or by a submission with content.</summary>
 public sealed record ArticleParsed(
     string ArticleId,
