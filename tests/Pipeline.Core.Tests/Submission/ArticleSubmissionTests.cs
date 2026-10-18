@@ -10,10 +10,11 @@ public class ArticleSubmissionTests
     private const string EvrenselUrl = "https://www.evrensel.net/haber/6005412/x?utm_source=rss_feed";
 
     private readonly InMemoryLedger _ledger = new();
+    private readonly InMemoryParsed _parsed = new();
     private readonly RecordingQueue _queue = new();
     private readonly ArticleSubmission _submission;
 
-    public ArticleSubmissionTests() => _submission = new(_ledger, _queue, TimeProvider.System);
+    public ArticleSubmissionTests() => _submission = new(_ledger, _parsed, _queue, TimeProvider.System);
 
     private Task<SubmitArticlesResponse> Submit(ArticleOrigin origin = ArticleOrigin.Manual, params ArticleToSubmit[] articles) =>
         _submission.SubmitAsync(new SubmitArticlesRequest(articles, origin));
@@ -94,6 +95,57 @@ public class ArticleSubmissionTests
         Assert.Equal(2, _queue.Sent.Count);
     }
 
+    [Fact]
+    public async Task ArticleWithContentEntersAlreadyParsed()
+    {
+        var date = new DateTimeOffset(2026, 10, 17, 22, 40, 0, TimeSpan.FromHours(3));
+        var response = await Submit(ArticleOrigin.Csv, new ArticleToSubmit(EvrenselUrl, " Başlık ", date, "  Gövde metni.  "));
+
+        var result = Assert.Single(response.Results);
+        Assert.Equal(SubmissionStatus.Accepted, result.Status);
+
+        var parsed = Assert.Single(_parsed.Saved);
+        Assert.Equal(result.ArticleId, parsed.ArticleId);
+        Assert.Equal("provided:csv", parsed.ParserVersion);
+        Assert.Null(parsed.RawHtmlPath);
+        Assert.Equal("Başlık", parsed.Title);
+        Assert.Equal(date, parsed.PublishedAt);
+        Assert.Equal("Gövde metni.", parsed.Body);
+
+        var record = _ledger.Records[result.ArticleId!];
+        Assert.Equal([Stage.Submitted, Stage.Parsed], record.Stages.Keys.Order());
+        Assert.Equal("provided:csv", record.Stages[Stage.Parsed].Version);
+
+        // Skips Fetch: goes straight to the queue after parsing.
+        var (queueName, message) = Assert.Single(_queue.Sent);
+        Assert.Equal(QueueNames.ArticleParsed, queueName);
+        Assert.Equal(parsed.Id, Assert.IsType<ArticleParsed>(message).ParsedId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task BlankContentMeansFetchThePage(string? content)
+    {
+        await Submit(articles: new ArticleToSubmit(EvrenselUrl, "Başlık", null, content));
+
+        Assert.Empty(_parsed.Saved);
+        Assert.Equal(QueueNames.ArticleSubmitted, Assert.Single(_queue.Sent).Queue);
+    }
+
+    [Fact]
+    public async Task DuplicateWithContentAddsNothing()
+    {
+        await Submit(articles: new ArticleToSubmit(EvrenselUrl));
+
+        var response = await Submit(ArticleOrigin.Csv, new ArticleToSubmit(EvrenselUrl, "Başlık", null, "Gövde"));
+
+        Assert.Equal(SubmissionStatus.Duplicate, Assert.Single(response.Results).Status);
+        Assert.Empty(_parsed.Saved);
+        Assert.Single(_queue.Sent);
+    }
+
     private sealed class InMemoryLedger : ILedgerStore
     {
         public Dictionary<string, LedgerRecord> Records { get; } = [];
@@ -104,8 +156,26 @@ public class ArticleSubmissionTests
         public Task<LedgerRecord?> GetAsync(string articleId, CancellationToken ct = default) =>
             Task.FromResult(Records.GetValueOrDefault(articleId));
 
-        public Task RecordStageAsync(string articleId, Stage stage, StageResult result, CancellationToken ct = default) =>
-            throw new NotSupportedException();
+        public Task RecordStageAsync(string articleId, Stage stage, StageResult result, CancellationToken ct = default)
+        {
+            var record = Records[articleId];
+            Records[articleId] = record with { Stages = new Dictionary<Stage, StageResult>(record.Stages) { [stage] = result } };
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class InMemoryParsed : IParsedStore
+    {
+        public List<ParsedArticle> Saved { get; } = [];
+
+        public Task SaveAsync(ParsedArticle parsed, CancellationToken ct = default)
+        {
+            Saved.Add(parsed);
+            return Task.CompletedTask;
+        }
+
+        public Task<ParsedArticle?> GetLatestAsync(string articleId, CancellationToken ct = default) =>
+            Task.FromResult(Saved.LastOrDefault(p => p.ArticleId == articleId));
     }
 
     private sealed class RecordingQueue : IQueueSender

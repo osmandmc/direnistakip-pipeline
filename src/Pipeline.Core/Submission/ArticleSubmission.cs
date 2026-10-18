@@ -6,10 +6,11 @@ using Pipeline.Core.Storage;
 namespace Pipeline.Core.Submission;
 
 /// <summary>
-/// Takes articles into the pipeline (D-002): one ledger record per ArticleId, then a message
-/// for the Fetch stage. Every entry point (manual, CSV, later the RSS timer) goes through here.
+/// Takes articles into the pipeline (D-002): one ledger record per ArticleId. Articles with content
+/// enter already parsed; the rest are queued for Fetch. Every entry point (manual, CSV, later the
+/// RSS timer) goes through here.
 /// </summary>
-public sealed class ArticleSubmission(ILedgerStore ledger, IQueueSender queue, TimeProvider clock)
+public sealed class ArticleSubmission(ILedgerStore ledger, IParsedStore parsed, IQueueSender queue, TimeProvider clock)
 {
     public const int MaxBatchSize = 100;
 
@@ -52,6 +53,12 @@ public sealed class ArticleSubmission(ILedgerStore ledger, IQueueSender queue, T
             return new SubmissionResult(url, SubmissionStatus.Duplicate, articleId);
         }
 
+        if (!string.IsNullOrWhiteSpace(article.Content))
+        {
+            await TakeProvidedContentAsync(articleId, source.Id, origin, article, now, ct);
+            return new SubmissionResult(url, SubmissionStatus.Accepted, articleId);
+        }
+
         // The original URL is what Fetch downloads; the canonical one is for identity only.
         await queue.SendAsync(
             QueueNames.ArticleSubmitted,
@@ -59,4 +66,24 @@ public sealed class ArticleSubmission(ILedgerStore ledger, IQueueSender queue, T
             ct);
         return new SubmissionResult(url, SubmissionStatus.Accepted, articleId);
     }
+
+    /// <summary>
+    /// Content came with the submission: save it as the parsed record and skip Fetch and Parse.
+    /// If this stops halfway, the ledger still shows only "Submitted", which is visible and safe.
+    /// </summary>
+    private async Task TakeProvidedContentAsync(
+        string articleId, string sourceId, ArticleOrigin origin, ArticleToSubmit article, DateTimeOffset now, CancellationToken ct)
+    {
+        var version = ProvidedVersion(origin);
+        var record = new ParsedArticle(
+            Guid.NewGuid().ToString("N"), articleId, sourceId, version, now,
+            RawHtmlPath: null, article.Title?.Trim(), article.PublishedAt, article.Content!.Trim());
+
+        await parsed.SaveAsync(record, ct);
+        await ledger.RecordStageAsync(articleId, Stage.Parsed, new StageResult(StageStatus.Succeeded, now, version), ct);
+        await queue.SendAsync(QueueNames.ArticleParsed, new ArticleParsed(articleId, sourceId, record.Id, version, now), ct);
+    }
+
+    /// <summary>Parser version for text that was provided rather than parsed, e.g. "provided:csv".</summary>
+    public static string ProvidedVersion(ArticleOrigin origin) => $"provided:{origin.ToString().ToLowerInvariant()}";
 }
