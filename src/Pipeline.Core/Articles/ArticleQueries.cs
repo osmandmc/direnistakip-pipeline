@@ -14,7 +14,7 @@ public sealed class ArticleQueries(ILedgerStore ledger, IParsedStore parsed)
     {
         var page = await ledger.QueryAsync(query, Math.Clamp(pageSize, 1, MaxPageSize), next, ct);
         return new ArticleListResponse(
-            page.Items.Select(r => new ArticleSummary(r.Id, r.SourceId, r.Origin, r.Url, r.Title, r.PublishedAt, r.Stages)).ToList(),
+            page.Items.Select(r => new ArticleSummary(r.Id, r.SourceId, r.Origin, r.Url, r.Title, r.PublishedAt, r.Stages, r.Outcome)).ToList(),
             page.Next);
     }
 
@@ -29,6 +29,6 @@ public sealed class ArticleQueries(ILedgerStore ledger, IParsedStore parsed)
         return new ArticleDetail(
             record.Id, record.SourceId, record.Origin, record.Url,
             record.Title ?? text?.Title, record.PublishedAt ?? text?.PublishedAt, record.Stages,
-            text?.Body, text?.ParserVersion);
+            text?.Body, text?.ParserVersion, record.Outcome);
     }
 }

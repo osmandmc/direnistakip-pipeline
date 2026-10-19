@@ -8,7 +8,8 @@ public sealed record ArticleSummary(
     string Url,
     string? Title,
     DateTimeOffset? PublishedAt,
-    IReadOnlyDictionary<Stage, StageResult> Stages);
+    IReadOnlyDictionary<Stage, StageResult> Stages,
+    ArticleOutcome? Outcome = null);
 
 /// <summary>
 /// A page of <c>GET /articles</c>. Pass <see cref="Next"/> back as <c>next</c> to load more;
@@ -26,4 +27,5 @@ public sealed record ArticleDetail(
     DateTimeOffset? PublishedAt,
     IReadOnlyDictionary<Stage, StageResult> Stages,
     string? Body,
-    string? ParserVersion);
+    string? ParserVersion,
+    ArticleOutcome? Outcome = null);

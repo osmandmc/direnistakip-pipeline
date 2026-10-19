@@ -68,6 +68,14 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
         }
     }
 
+    public Task SetOutcomeAsync(string articleId, ArticleOutcome outcome, CancellationToken ct = default) =>
+        container.PatchItemAsync<LedgerRecord>(
+            articleId,
+            new PartitionKey(articleId),
+            [PatchOperation.Set("/outcome", outcome with { At = TurkeyTime.Normalize(outcome.At) })],
+            new PatchItemRequestOptions { EnableContentResponseOnWrite = false },
+            ct);
+
     public async Task<LedgerPage> QueryAsync(LedgerQuery query, int pageSize, string? continuation, CancellationToken ct = default)
     {
         // Records created before list dates existed have none and are left out.
@@ -94,6 +102,12 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
             ArticleStatusFilter.Parsed => $" AND c.stages.{Stage.Parsed}.status = '{StageStatus.Succeeded}'",
             ArticleStatusFilter.Failed => " AND (" + string.Join(" OR ",
                 Enum.GetValues<Stage>().Select(stage => $"c.stages.{stage}.status = '{StageStatus.Failed}'")) + ")",
+            _ => "",
+        });
+        sql.Append(query.Outcome switch
+        {
+            OutcomeFilter.Open => " AND (NOT IS_DEFINED(c.outcome) OR IS_NULL(c.outcome))",
+            OutcomeFilter.Handled => " AND IS_DEFINED(c.outcome) AND NOT IS_NULL(c.outcome)",
             _ => "",
         });
         sql.Append(" ORDER BY c.listDate DESC");

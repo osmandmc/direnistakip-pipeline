@@ -37,6 +37,12 @@ internal sealed class InMemoryLedger : ILedgerStore
         return Task.CompletedTask;
     }
 
+    public Task SetOutcomeAsync(string articleId, ArticleOutcome outcome, CancellationToken ct = default)
+    {
+        Records[articleId] = Records[articleId] with { Outcome = outcome with { At = TurkeyTime.Normalize(outcome.At) } };
+        return Task.CompletedTask;
+    }
+
     // Same filters and order as the Cosmos query; "next" is simply the offset of the next page.
     public Task<LedgerPage> QueryAsync(LedgerQuery query, int pageSize, string? continuation, CancellationToken ct = default)
     {
@@ -49,6 +55,12 @@ internal sealed class InMemoryLedger : ILedgerStore
             {
                 ArticleStatusFilter.Parsed => r.Stages.TryGetValue(Stage.Parsed, out var p) && p.Status == StageStatus.Succeeded,
                 ArticleStatusFilter.Failed => r.Stages.Values.Any(s => s.Status == StageStatus.Failed),
+                _ => true,
+            })
+            .Where(r => query.Outcome switch
+            {
+                OutcomeFilter.Open => r.Outcome is null,
+                OutcomeFilter.Handled => r.Outcome is not null,
                 _ => true,
             })
             .OrderByDescending(r => r.ListDate)

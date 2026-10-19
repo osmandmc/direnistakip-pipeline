@@ -100,6 +100,35 @@ public class LedgerQueryTests(EmulatorFixture emulators)
     }
 
     [Fact]
+    public async Task OutcomeIsStoredWithoutTouchingStages()
+    {
+        var id = await Parsed(Oct(6));
+        var at = new DateTimeOffset(2026, 11, 3, 7, 0, 0, TimeSpan.Zero);
+
+        await _store.SetOutcomeAsync(id, new ArticleOutcome(OutcomeKind.Digested, at, ResistanceId: 412));
+
+        var record = await _store.GetAsync(id);
+        Assert.NotNull(record);
+        Assert.Equal(new ArticleOutcome(OutcomeKind.Digested, at, 412), record.Outcome);
+        Assert.Equal(TurkeyTime.Offset, record.Outcome!.At.Offset);
+        Assert.Equal([Stage.Submitted, Stage.Parsed], record.Stages.Keys.Order());
+    }
+
+    [Fact]
+    public async Task OutcomeFilterSeparatesInboxFromHandled()
+    {
+        var open = await Parsed(Oct(7));
+        var digested = await Parsed(Oct(8));
+        var dismissed = await Parsed(Oct(9));
+        await _store.SetOutcomeAsync(digested, new ArticleOutcome(OutcomeKind.Digested, DateTimeOffset.UtcNow, ResistanceId: 1));
+        await _store.SetOutcomeAsync(dismissed, new ArticleOutcome(OutcomeKind.Dismissed, DateTimeOffset.UtcNow, Reason: "İlgisiz"));
+
+        Assert.Equal([open], await AllIds(new LedgerQuery(_source)));
+        Assert.Equal([dismissed, digested], await AllIds(new LedgerQuery(_source, Outcome: OutcomeFilter.Handled)));
+        Assert.Equal(3, (await AllIds(new LedgerQuery(_source, Outcome: OutcomeFilter.Any))).Count);
+    }
+
+    [Fact]
     public async Task InvalidNextIsRejectedClearly()
     {
         await Assert.ThrowsAsync<ArgumentException>(() => _store.QueryAsync(new LedgerQuery(_source), 10, "not*a*token"));
