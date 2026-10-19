@@ -31,13 +31,13 @@ One source all the way from link to parsed article, before adding the others. En
 
 App integration without shared code: the JSON API is the contract, and the app keeps its own small request/response records. Existing `News` rows are not backfilled; a **cut-over month** separates old (local table) from new (pipeline inbox), so the same article never lives in both. The app reuses `News` (thin rows created on link/dismiss) and keeps its own source numbers with a mapping.
 
+App-side tasks (B2, B3, the inbox and the redesigned screens) are tracked in the app repo's `tasks.md` (ResistanceSurvey).
+
 | # | Task | Repo | Notes |
 |---|---|---|---|
-| ☑ B2 | `News.ArticleId` + cut-over setting | app | EF migration: nullable `ArticleId`, unique where set. Setting `Pipeline:CutoverMonth` (e.g. `2026-11`). Existing rows stay `NULL` |
-| ☑ B3 | Excel upload → pipeline | app | Months from the cut-over → `POST /api/articles`; older months → local import as today |
 | ☑ B4 | Outcome endpoint | pipeline | `POST /api/articles/{id}/outcome` (linked / dismissed); `GET /articles` hides handled articles by default |
-| ☐ B5 | Inbox from the pipeline | app | `/resistance/news`: pipeline for months from the cut-over, local table before. Link/dismiss creates the thin `News` row (reusing a same-`Link` row if present) and sends the outcome |
-| ☐ B6 | Rollups + funnel metrics (was T9) | both | Daily counts by source and stage; `GET /metrics`; app screen later |
+| ☐ B6 | Rollups + funnel metrics (was T9) | pipeline | Daily counts by source and stage; `GET /metrics` (the app's dashboard is tracked in the app) |
+| ☐ B7 | Title search in the read API | pipeline | For the app's article archive (app task R7) |
 | ☐ S1 | Other sources | pipeline | Kızılbayrak and Sendika: run the spike from Azure, then parsers. BirGün: blocked until access is granted (**you / the group** contact BirGün) |
 
 Dropped: the contracts package (was T11) and the `News` backfill / identity endpoint (was T12, B1), both made unnecessary by the cut-over.
