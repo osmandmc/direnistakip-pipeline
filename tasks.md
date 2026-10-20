@@ -37,7 +37,7 @@ App-side tasks (B2, B3, the inbox and the redesigned screens) are tracked in the
 |---|---|---|---|
 | ☑ B4 | Outcome endpoint | pipeline | `POST /api/articles/{id}/outcome` (linked / dismissed); `GET /articles` hides handled articles by default |
 | ☐ B6 | Rollups + funnel metrics (was T9) | pipeline | Daily counts by source and stage; `GET /metrics` (the app's dashboard is tracked in the app) |
-| ☐ B7 | Title search in the read API | pipeline | For the app's article archive (app task R7) |
+| ☑ B7 | Title search in the read API | pipeline | `GET /articles?q=`: titles compared in folded form (case, accents and Turkish letters ignored); a link finds its article in any state. For the app's article archive (app task R7) |
 | ☐ S1 | Other sources | pipeline | Kızılbayrak and Sendika: run the spike from Azure, then parsers. BirGün: blocked until access is granted (**you / the group** contact BirGün) |
 
 Dropped: the contracts package (was T11) and the `News` backfill / identity endpoint (was T12, B1), both made unnecessary by the cut-over.

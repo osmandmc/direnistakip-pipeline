@@ -1,4 +1,5 @@
 using Pipeline.Contracts;
+using Pipeline.Core.Identity;
 using Pipeline.Core.Storage;
 
 namespace Pipeline.Core.Articles;
@@ -13,10 +14,25 @@ public sealed class ArticleQueries(ILedgerStore ledger, IParsedStore parsed)
         LedgerQuery query, int pageSize, string? next, CancellationToken ct = default)
     {
         var page = await ledger.QueryAsync(query, Math.Clamp(pageSize, 1, MaxPageSize), next, ct);
-        return new ArticleListResponse(
-            page.Items.Select(r => new ArticleSummary(r.Id, r.SourceId, r.Origin, r.Url, r.Title, r.PublishedAt, r.Stages, r.Outcome)).ToList(),
-            page.Next);
+        return new ArticleListResponse(page.Items.Select(Summary).ToList(), page.Next);
     }
+
+    /// <summary>
+    /// The article with this link, whatever its status or outcome ("did this link already come in?").
+    /// Null when the text is not a link.
+    /// </summary>
+    public async Task<ArticleListResponse?> FindByUrlAsync(string text, CancellationToken ct = default)
+    {
+        if (!UrlCanonicalizer.TryCanonicalize(text, out var canonical))
+        {
+            return null;
+        }
+        var record = await ledger.GetAsync(ArticleIdentity.FromCanonicalUrl(canonical), ct);
+        return new ArticleListResponse(record is null ? [] : [Summary(record)], null);
+    }
+
+    private static ArticleSummary Summary(LedgerRecord r) =>
+        new(r.Id, r.SourceId, r.Origin, r.Url, r.Title, r.PublishedAt, r.Stages, r.Outcome);
 
     public async Task<ArticleDetail?> GetAsync(string articleId, CancellationToken ct = default)
     {
