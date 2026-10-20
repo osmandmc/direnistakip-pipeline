@@ -251,7 +251,7 @@ Suggested case action (D-012): new resistance + protest · new protest on existi
 
 ### 4.3 Collection — Discover
 
-Evrensel since E7: one timer (`CollectFeeds`, every two hours at :05) reads the RSS feed of each enabled source that has one (`SourceCatalog`) and submits its links through the same path as `POST /articles`. Evrensel's feed holds about 100 articles (≈ 14 hours), so a missed run loses nothing; known links come back as duplicates. Switched on by the app setting `FeedCollection__Enabled` (infra parameter `feedCollectionEnabled`, off by default). Sources without a usable feed would read listing pages instead (phase 5).
+Evrensel since E7, Kızılbayrak since S2: one timer (`CollectFeeds`, every two hours at :05) reads the RSS feed of each enabled source that has one (`SourceCatalog`) and submits its links through the same path as `POST /articles`. Kızılbayrak's feed carries the whole text, so its articles enter already parsed (like CSV rows) and its pages are never downloaded. Evrensel's feed holds about 100 articles (≈ 14 hours), so a missed run loses nothing; known links come back as duplicates. Switched on by the app setting `FeedCollection__Enabled` (infra parameter `feedCollectionEnabled`, off by default). Sources without a usable feed would read listing pages instead (phase 5).
 
 ```mermaid
 sequenceDiagram

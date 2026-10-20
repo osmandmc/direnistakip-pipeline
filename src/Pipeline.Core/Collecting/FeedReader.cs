@@ -5,13 +5,16 @@ using Pipeline.Contracts;
 
 namespace Pipeline.Core.Collecting;
 
-/// <summary>Reads an RSS 2.0 feed into articles to submit: link, title and publication date (no text; Fetch reads the page).</summary>
+/// <summary>
+/// Reads an RSS 2.0 feed into articles to submit: link, title and publication date. With <c>withText</c> (feeds that
+/// carry the whole article, like Kızılbayrak's) also the text, so the article enters already parsed; otherwise Fetch reads the page.
+/// </summary>
 public static class FeedReader
 {
     private static readonly XmlReaderSettings Safe = new() { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
 
     /// <exception cref="FormatException">Not an RSS feed.</exception>
-    public static IReadOnlyList<ArticleToSubmit> Read(Stream feed)
+    public static IReadOnlyList<ArticleToSubmit> Read(Stream feed, bool withText = false)
     {
         XDocument document;
         try
@@ -41,7 +44,8 @@ public static class FeedReader
                 continue;
             }
             var title = item.Element("title")?.Value.Trim();
-            articles.Add(new ArticleToSubmit(url, string.IsNullOrEmpty(title) ? null : title, ReadDate(item.Element("pubDate")?.Value)));
+            var text = withText ? FeedText.ToParagraphs(item.Element("description")?.Value) : null;
+            articles.Add(new ArticleToSubmit(url, string.IsNullOrEmpty(title) ? null : title, ReadDate(item.Element("pubDate")?.Value), text));
         }
         return articles;
     }

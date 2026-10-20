@@ -45,4 +45,37 @@ public class FeedReaderTests
     [InlineData("""<?xml version="1.0"?><!DOCTYPE rss [<!ENTITY x "y">]><rss><channel/></rss>""")]
     public void RefusesWhatIsNotAnRssFeed(string body) =>
         Assert.Throws<FormatException>(() => FeedReader.Read(Text(body)));
+
+    [Fact]
+    public void TakesTheWholeTextWhenTheFeedCarriesIt()
+    {
+        using var feed = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "Fixtures", "feeds", "kizilbayrak-rss.xml"));
+
+        var articles = FeedReader.Read(feed, withText: true);
+
+        Assert.Equal(2, articles.Count);
+        var first = articles[0];
+        // The guid is only a slug, so the link is used; mirror domains are mapped later by the canonicaliser.
+        Assert.Equal("https://kizilbayrak85.net/ana-sayfa/haber/kadin/kadin-adalet-ve-hafiza-nobeti-suruyor", first.Url);
+        Assert.Equal("Kadın, Adalet ve Hafıza Nöbeti sürüyor", first.Title);
+        Assert.Equal(new DateTimeOffset(2026, 10, 20, 23, 30, 0, TimeSpan.FromHours(3)), first.PublishedAt);
+        var paragraphs = first.Content!.Split("\n\n");
+        // The bold lead repeated as the first body paragraph counts once; the quote's paragraph once; no image.
+        Assert.Equal(4, paragraphs.Length);
+        Assert.StartsWith("Diyarbakır’da Şiddetle Mücadele Ağı", paragraphs[0]);
+        Assert.StartsWith("“Biz kadınların yaşarken korunmasını", paragraphs[2]);
+        Assert.DoesNotContain("<", first.Content);
+        Assert.StartsWith("Avrupa Gündemi’nde bu hafta", articles[1].Content);
+    }
+
+    [Fact]
+    public void WithoutTextOnlyTheLinkTitleAndDate() =>
+        Assert.All(FeedReader.Read(File.OpenRead(Path.Combine(AppContext.BaseDirectory, "Fixtures", "feeds", "kizilbayrak-rss.xml"))),
+            a => Assert.Null(a.Content));
+
+    [Theory]
+    [InlineData("<p>Bir.</p><ul><li>iki</li><li>üç</li></ul>", "Bir.\n\n- iki\n\n- üç")]
+    [InlineData("Düz metin, &#252;st&#252;nde etiket yok.", "Düz metin, üstünde etiket yok.")]
+    [InlineData("<img src=\"x.jpg\" />", null)]
+    public void FeedHtmlBecomesParagraphs(string html, string? text) => Assert.Equal(text, FeedText.ToParagraphs(html));
 }
