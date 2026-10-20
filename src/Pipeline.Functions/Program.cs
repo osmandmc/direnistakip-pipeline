@@ -21,6 +21,7 @@ builder.Services
 // HTTP clients for news sites: pages for the Fetch stage, feeds for the collector.
 builder.Services.AddHttpClient<ArticleFetcher>(NewsHttp.Configure).ConfigurePrimaryHttpMessageHandler(NewsHttp.CreateHandler);
 builder.Services.AddHttpClient<FeedCollector>(NewsHttp.Configure).ConfigurePrimaryHttpMessageHandler(NewsHttp.CreateHandler);
+builder.Services.AddTransient<FeedCollection>();
 
 // Ledger, raw HTML, parsed records and queues (managed identity in Azure, emulators locally).
 builder.Services.AddPipelineStorage(builder.Configuration);
