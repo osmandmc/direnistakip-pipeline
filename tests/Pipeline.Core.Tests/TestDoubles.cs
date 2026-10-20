@@ -1,5 +1,6 @@
 using System.Net;
 using Pipeline.Contracts;
+using Pipeline.Core.Articles;
 using Pipeline.Core.Storage;
 
 namespace Pipeline.Core.Tests;
@@ -63,6 +64,8 @@ internal sealed class InMemoryLedger : ILedgerStore
                 OutcomeFilter.Handled => r.Outcome is not null,
                 _ => true,
             })
+            .Where(r => query.TitleContains is null
+                || (r.Title is not null && TitleSearch.Fold(r.Title).Contains(TitleSearch.Fold(query.TitleContains), StringComparison.Ordinal)))
             .OrderByDescending(r => r.ListDate)
             .ToList();
         var offset = continuation is null ? 0 : int.Parse(continuation);

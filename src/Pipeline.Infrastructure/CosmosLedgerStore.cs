@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Azure.Cosmos;
 using Pipeline.Contracts;
 using Pipeline.Core;
+using Pipeline.Core.Articles;
 using Pipeline.Core.Storage;
 
 namespace Pipeline.Infrastructure;
@@ -53,6 +54,8 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
         if (title is not null)
         {
             operations.Add(PatchOperation.Set("/title", title));
+            // Storage only (not part of LedgerRecord): what title searches compare against.
+            operations.Add(PatchOperation.Set("/searchTitle", TitleSearch.Fold(title)));
         }
         if (publishedAt is { } date)
         {
@@ -110,6 +113,13 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
             OutcomeFilter.Handled => " AND IS_DEFINED(c.outcome) AND NOT IS_NULL(c.outcome)",
             _ => "",
         });
+        if (query.TitleContains is { } text)
+        {
+            // Records titled before searchTitle existed: case-insensitive match on the title itself.
+            sql.Append(" AND (IS_DEFINED(c.searchTitle) ? CONTAINS(c.searchTitle, @folded) : CONTAINS(c.title, @text, true))");
+            parameters.Add(("@folded", TitleSearch.Fold(text)));
+            parameters.Add(("@text", text));
+        }
         sql.Append(" ORDER BY c.listDate DESC");
 
         var definition = new QueryDefinition(sql.ToString());

@@ -47,12 +47,14 @@ public enum OutcomeFilter
 
 /// <param name="From">Inclusive, compared with the list date.</param>
 /// <param name="Before">Exclusive.</param>
+/// <param name="TitleContains">Text the title must contain, compared in folded form (<see cref="Articles.TitleSearch"/>).</param>
 public sealed record LedgerQuery(
     string? SourceId = null,
     DateTimeOffset? From = null,
     DateTimeOffset? Before = null,
     ArticleStatusFilter Status = ArticleStatusFilter.Parsed,
-    OutcomeFilter Outcome = OutcomeFilter.Open);
+    OutcomeFilter Outcome = OutcomeFilter.Open,
+    string? TitleContains = null);
 
 /// <summary>A page of records; <see cref="Next"/> is an opaque token for the following page, or null.</summary>
 public sealed record LedgerPage(IReadOnlyList<LedgerRecord> Items, string? Next);

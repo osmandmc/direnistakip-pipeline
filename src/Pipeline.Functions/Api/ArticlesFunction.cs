@@ -10,7 +10,8 @@ namespace Pipeline.Functions.Api;
 
 /// <summary>
 /// Read API for the direnistakip app (D-009). Requires a function key (D-025).
-/// <c>GET /api/articles?from=2026-10-01&amp;to=2026-10-31&amp;source=evrensel&amp;status=parsed&amp;outcome=open&amp;pageSize=20&amp;next=…</c>
+/// <c>GET /api/articles?from=2026-10-01&amp;to=2026-10-31&amp;source=evrensel&amp;status=parsed&amp;outcome=open&amp;q=işçi&amp;pageSize=20&amp;next=…</c>
+/// <c>q</c> searches titles (Turkish letters and case do not matter); a link in <c>q</c> finds that one article, ignoring the other filters.
 /// <c>GET /api/articles/{id}</c>
 /// </summary>
 public sealed class ArticlesFunction(ArticleQueries queries)
@@ -34,6 +35,15 @@ public sealed class ArticlesFunction(ArticleQueries queries)
         {
             return Error("'outcome' is one of: open, handled, any");
         }
+        var search = req.Query["q"].ToString().Trim();
+        if (search.Length > 0 && await queries.FindByUrlAsync(search, ct) is { } byUrl)
+        {
+            return new OkObjectResult(byUrl);
+        }
+        if (search.Length > 0 && TitleSearch.Fold(search).Length < TitleSearch.MinLength)
+        {
+            return Error($"'q' needs at least {TitleSearch.MinLength} characters");
+        }
         var pageSize = ArticleQueries.DefaultPageSize;
         if (req.Query["pageSize"] is { Count: > 0 } sizeText && !int.TryParse(sizeText, out pageSize))
         {
@@ -45,7 +55,8 @@ public sealed class ArticlesFunction(ArticleQueries queries)
             From: from is { } f ? TurkeyTime.StartOfDay(f) : null,
             Before: to is { } t ? TurkeyTime.StartOfDay(t.AddDays(1)) : null, // "to" includes the whole day
             Status: status,
-            Outcome: outcome);
+            Outcome: outcome,
+            TitleContains: search.Length > 0 ? search : null);
 
         try
         {

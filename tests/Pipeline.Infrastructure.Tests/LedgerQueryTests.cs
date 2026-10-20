@@ -134,4 +134,28 @@ public class LedgerQueryTests(EmulatorFixture emulators)
         await Assert.ThrowsAsync<ArgumentException>(() => _store.QueryAsync(new LedgerQuery(_source), 10, "not*a*token"));
         await Assert.ThrowsAsync<ArgumentException>(() => _store.QueryAsync(new LedgerQuery(_source), 10, "bm9uc2Vuc2U"));
     }
+
+    [Fact]
+    public async Task TitleSearchIgnoresCaseAndTurkishLetters()
+    {
+        var match = await Parsed(Oct(10), "Korteks’te İŞÇİLER greve çıktı");
+        var other = await Parsed(Oct(11), "Belediye işçileri eylemde");
+        await Parsed(Oct(12), "Hava durumu");
+
+        Assert.Equal([other, match], await AllIds(new LedgerQuery(_source, TitleContains: "ISCILER")));
+        Assert.Equal([match], await AllIds(new LedgerQuery(_source, TitleContains: "korteks'te")));
+    }
+
+    [Fact]
+    public async Task TitleSearchFindsRecordsWithoutTheSearchField()
+    {
+        // A title written before searchTitle existed: matched on the title itself, case-insensitively.
+        var id = Guid.NewGuid().ToString("N");
+        await _store.TryCreateAsync(new LedgerRecord(
+            id, _source, ArticleOrigin.Csv, $"https://www.evrensel.net/haber/{id}",
+            new Dictionary<Stage, StageResult> { [Stage.Parsed] = new(StageStatus.Succeeded, DateTimeOffset.UtcNow) },
+            Title: "Metal işçileri grevde", ListDate: TurkeyTime.Normalize(Oct(13))));
+
+        Assert.Equal([id], await AllIds(new LedgerQuery(_source, TitleContains: "METAL")));
+    }
 }

@@ -1,5 +1,6 @@
 using Pipeline.Contracts;
 using Pipeline.Core.Articles;
+using Pipeline.Core.Identity;
 using Pipeline.Core.Storage;
 
 namespace Pipeline.Core.Tests.Articles;
@@ -12,7 +13,7 @@ public class ArticleQueriesTests
 
     public ArticleQueriesTests() => _queries = new(_ledger, _parsed);
 
-    private void Add(string id, DateTimeOffset publishedAt, bool parsed = true)
+    private void Add(string id, DateTimeOffset publishedAt, bool parsed = true, string? title = null)
     {
         var stages = new Dictionary<Stage, StageResult> { [Stage.Submitted] = new(StageStatus.Succeeded, publishedAt) };
         if (parsed)
@@ -22,7 +23,7 @@ public class ArticleQueriesTests
         }
         _ledger.Records[id] = new LedgerRecord(
             id, "evrensel", ArticleOrigin.Csv, $"https://www.evrensel.net/haber/{id}", stages,
-            Title: parsed ? $"Başlık {id}" : null, PublishedAt: parsed ? publishedAt : null, ListDate: publishedAt);
+            Title: parsed ? title ?? $"Başlık {id}" : null, PublishedAt: parsed ? publishedAt : null, ListDate: publishedAt);
     }
 
     [Fact]
@@ -82,5 +83,36 @@ public class ArticleQueriesTests
         var page = await _queries.ListAsync(new LedgerQuery(), pageSize: 1000, next: null);
 
         Assert.Equal(ArticleQueries.MaxPageSize, page.Items.Count);
+    }
+
+    [Fact]
+    public async Task TitleSearchIgnoresCaseAndTurkishLetters()
+    {
+        Add("c1", new DateTimeOffset(2026, 10, 1, 12, 0, 0, TurkeyTime.Offset), title: "Korteks’te İŞÇİLER greve çıktı");
+        Add("c2", new DateTimeOffset(2026, 10, 2, 12, 0, 0, TurkeyTime.Offset), title: "Belediye işçileri eylemde");
+        Add("c3", new DateTimeOffset(2026, 10, 3, 12, 0, 0, TurkeyTime.Offset), title: "Hava durumu");
+
+        var page = await _queries.ListAsync(new LedgerQuery(TitleContains: "isciler"), pageSize: 10, next: null);
+
+        Assert.Equal(["c2", "c1"], page.Items.Select(i => i.ArticleId));
+    }
+
+    [Fact]
+    public async Task LinkFindsItsArticleWhateverItsState()
+    {
+        var url = "https://www.evrensel.net/haber/560123/korteks";
+        var id = ArticleIdentity.FromUrl(url);
+        _ledger.Records[id] = new LedgerRecord(
+            id, "evrensel", ArticleOrigin.Manual, url,
+            new Dictionary<Stage, StageResult> { [Stage.Fetched] = new(StageStatus.Failed, DateTimeOffset.UtcNow, Reason: "HTTP 404") },
+            Outcome: new ArticleOutcome(OutcomeKind.Dismissed, DateTimeOffset.UtcNow));
+
+        // Same article: other host form and a tracking parameter.
+        var found = await _queries.FindByUrlAsync("http://evrensel.net/haber/560123/korteks/?utm_source=x");
+        var missing = await _queries.FindByUrlAsync("https://www.evrensel.net/haber/1/yok");
+
+        Assert.Equal([id], found!.Items.Select(i => i.ArticleId));
+        Assert.Empty(missing!.Items);
+        Assert.Null(await _queries.FindByUrlAsync("korteks grev"));
     }
 }

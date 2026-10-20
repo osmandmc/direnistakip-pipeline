@@ -131,7 +131,7 @@ flowchart TB
 | Endpoint | Used by |
 |---|---|
 | `POST /articles` | CSV upload / manual submit |
-| `GET /articles` | Inbox: open (not yet digested or dismissed) articles by default; `outcome=handled\|any` |
+| `GET /articles` | Inbox: open (not yet digested or dismissed) articles by default; `outcome=handled\|any`. `q` searches titles regardless of case and Turkish letters (a folded copy, `searchTitle`, is stored with the title); a link in `q` returns that one article whatever its state |
 | `GET /articles?status=draft-ready` | Review list |
 | `GET /articles/{id}/draft` | Review screen |
 | `POST /articles/{id}/outcome` | App after save (D-011) |
