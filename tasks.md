@@ -38,7 +38,8 @@ App-side tasks (B2, B3, the inbox and the redesigned screens) are tracked in the
 | ☑ B4 | Outcome endpoint | pipeline | `POST /api/articles/{id}/outcome` (linked / dismissed); `GET /articles` hides handled articles by default |
 | ☐ B6 | Rollups + funnel metrics (was T9) | pipeline | Daily counts by source and stage; `GET /metrics` (the app's dashboard is tracked in the app) |
 | ☑ B7 | Title search in the read API | pipeline | `GET /articles?q=`: titles compared in folded form (case, accents and Turkish letters ignored); a link finds its article in any state. For the app's article archive (app task R7) |
-| ☐ S1 | Other sources | pipeline | Kızılbayrak and Sendika: run the spike from Azure, then parsers. BirGün: blocked until access is granted (**you / the group** contact BirGün) |
+| ☐ S1 | Other sources | pipeline | Sendika: run the spike from Azure, then a parser (Kızılbayrak: S2). BirGün: blocked until access is granted (**you / the group** contact BirGün) |
+| ☐ S2 | Kızılbayrak from its RSS feed | pipeline | Feed found 2026-10-20: `http://www.kizilbayrak.net/rss` → `https://kizilbayrak85.net/rss` (RSS 2.0, 50 items ≈ 3 days; guid is only a slug, so the link is used). HTTPS to the old host fails TLS; the site moves between numbered domains, so the feed address must follow it. `<description>` seems to hold the full text (median ≈ 2,500 chars): check it is complete, then either take the text from the feed (entering already parsed, like the CSV) or write a page parser. Then enable the source with its `FeedUrl`. Fetch from Azure checked first. Covers news and columns beyond labour (relevance later) |
 
 Dropped: the contracts package (was T11) and the `News` backfill / identity endpoint (was T12, B1), both made unnecessary by the cut-over.
 
