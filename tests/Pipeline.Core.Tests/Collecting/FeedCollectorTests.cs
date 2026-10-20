@@ -51,4 +51,25 @@ public class FeedCollectorTests
         Assert.Equal(HttpStatusCode.ServiceUnavailable, error.StatusCode);
         Assert.Empty(_ledger.Records);
     }
+
+    [Fact]
+    public async Task AFeedWithFullTextEntersAlreadyParsed()
+    {
+        var kizilbayrak = SourceCatalog.All.Single(s => s.Id == "kizilbayrak");
+        var collector = Collector(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(File.OpenRead(Path.Combine(AppContext.BaseDirectory, "Fixtures", "feeds", "kizilbayrak-rss.xml"))),
+        });
+
+        var result = await collector.CollectAsync(kizilbayrak);
+
+        Assert.Equal(new FeedCollectionResult("kizilbayrak", 2, 2, 0, 0), result);
+        Assert.All(_ledger.Records.Values, r =>
+        {
+            Assert.Equal("kizilbayrak", r.SourceId);
+            Assert.Equal("provided:collector", r.Stages[Stage.Parsed].Version);
+            Assert.False(r.Stages.ContainsKey(Stage.Fetched)); // the page is not downloaded
+        });
+        Assert.All(_queue.Sent, m => Assert.IsType<ArticleParsed>(m.Message));
+    }
 }

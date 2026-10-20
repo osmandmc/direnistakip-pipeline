@@ -55,7 +55,7 @@ public class ArticleMetricsTests
 
         var result = await _metrics.GetAsync(14);
 
-        var evrensel = Assert.Single(result.Sources);
+        var evrensel = result.Sources.Single(s => s.SourceId == "evrensel");
         Assert.Equal(("evrensel", 3, 1, 1), (evrensel.SourceId, evrensel.Received, evrensel.Failed, evrensel.Open));
         Assert.Equal(Oct(20, 8), evrensel.LastReceivedAt);
         Assert.Equal(ArticleOrigin.Collector, evrensel.LastReceivedOrigin);
@@ -68,9 +68,10 @@ public class ArticleMetricsTests
     {
         var result = await _metrics.GetAsync(7);
 
-        var evrensel = Assert.Single(result.Sources);
-        Assert.Equal((null, 0), (evrensel.LastReceivedAt, evrensel.Received));
-        Assert.Equal(7, result.Days.Count);
+        // Every enabled source is listed, with a zero row per day.
+        Assert.Equal(["evrensel", "kizilbayrak"], result.Sources.Select(s => s.SourceId));
+        Assert.All(result.Sources, s => Assert.Equal((null, 0), (s.LastReceivedAt, s.Received)));
+        Assert.Equal(7 * 2, result.Days.Count);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider

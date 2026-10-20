@@ -18,8 +18,12 @@ public class SourceCatalogTests
     }
 
     [Fact]
-    public void OnlyEvrenselIsEnabled() =>
-        Assert.Equal(["evrensel"], SourceCatalog.All.Where(s => s.Enabled).Select(s => s.Id));
+    public void EvrenselAndKizilbayrakAreEnabled() =>
+        Assert.Equal(["evrensel", "kizilbayrak"], SourceCatalog.All.Where(s => s.Enabled).Select(s => s.Id));
+
+    [Fact]
+    public void OnlyKizilbayraksFeedCarriesTheWholeText() =>
+        Assert.Equal(["kizilbayrak"], SourceCatalog.All.Where(s => s.FeedHasFullText).Select(s => s.Id));
 
     [Fact]
     public void UnknownHostIsNotResolved() =>

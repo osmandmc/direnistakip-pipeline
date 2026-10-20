@@ -28,7 +28,7 @@ public sealed class FeedCollector(HttpClient http, ArticleSubmission submission)
             throw new HttpRequestException($"Feed {source.FeedUrl} answered HTTP {(int)response.StatusCode}.", null, response.StatusCode);
         }
         await using var feed = await response.Content.ReadAsStreamAsync(ct);
-        var articles = FeedReader.Read(feed);
+        var articles = FeedReader.Read(feed, source.FeedHasFullText);
 
         var results = new List<SubmissionResult>(articles.Count);
         foreach (var batch in articles.Chunk(ArticleSubmission.MaxBatchSize))
