@@ -124,6 +124,7 @@ Diagrams, roadmap and cost options: [architecture.md](architecture.md).
 
 ## D-015 — Monitoring from a ledger with rollups
 **Decision.** One ledger record per article with timestamp and outcome per stage plus failure reasons. Daily rollups by source, origin and stage; the app reads rollups only. App Insights alerts: source silence, queue depth, poison queue, LLM errors and spend. No full article text in logs.
+**Update (B6).** Rollups deferred: `GET /metrics` counts on request from the ledger (records written in the period, by Cosmos `_ts`; open inbox by `COUNT`). Simpler (no timer, no stored totals to keep right) and always current, and cheap while the ledger holds thousands of records and the dashboard is opened a few times a day. If the ledger grows large, a rollup timer fills the `rollups` container behind the same response.
 
 ## D-016 — No on-demand LLM calls from the app
 **Decision.** Extraction runs ahead of time in the pipeline; the app only reads drafts. File contract kept as transition fallback.

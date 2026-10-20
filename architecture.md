@@ -121,7 +121,7 @@ flowchart TB
 | Extract | Queue article-relevant | Parsed record, prompt, schema; LLM | Draft record, ledger | article-extracted | 3 |
 | Validate | Queue article-extracted | Draft, parsed text | Flags on draft, ledger: Draft ready | — | 3 |
 | RecordFailure | Poison queues | Failed message | Ledger: Failed + reason | — | 2 |
-| Rollups | Timer, daily | Ledger | Rollups | — | 2 |
+| Rollups | Timer, daily — **deferred**: `GET /metrics` counts on request (D-015 update) | Ledger | Rollups | — | 2 |
 | Pipeline API | HTTP (key) | Ledger, drafts, rollups | Ledger: outcome | — | 2–3 |
 
 ¹ Until phase 4, Relevance is a pass-through: articles submitted by CSV were already picked by researchers (D-007).
@@ -135,7 +135,7 @@ flowchart TB
 | `GET /articles?status=draft-ready` | Review list |
 | `GET /articles/{id}/draft` | Review screen |
 | `POST /articles/{id}/outcome` | App after save (D-011) |
-| `GET /metrics` | Funnel dashboard |
+| `GET /metrics?days=14` | Funnel dashboard: per source (latest arrival, received, failed, open inbox), per day (received, read, failed, linked, dismissed) and the latest failures; counted on request (D-015 update) |
 | `GET /health` | Deployment check |
 
 ### 2.2 App-side work (direnistakip, SmarterASP)
@@ -144,7 +144,7 @@ flowchart TB
 |---|---|---|
 | `News` backfill | Add `ArticleId` to existing rows, de-duplicate (D-002) | Before 2 |
 | CSV upload → pipeline | Send rows to `POST /articles` instead of (or in addition to) local import | 2 |
-| Funnel dashboard | Show rollups from `GET /metrics` | 2 |
+| Funnel dashboard | Show `GET /metrics` | 2 |
 | `ArticleReview` table | Unique per article; records digested / dismissed (D-010) | 3 |
 | Review list + screen | List drafts, show flags, pre-fill the form | 3 |
 | Case matching | Company lookup + aliases, suggest new resistance / new protest / link only (D-006, D-012) | 3 |
@@ -275,6 +275,8 @@ sequenceDiagram
 ```
 
 ### 4.4 Monitoring
+
+Today `GET /metrics` counts from the ledger on request (D-015 update); the rollup timer below comes when the ledger is too large for that.
 
 ```mermaid
 sequenceDiagram
