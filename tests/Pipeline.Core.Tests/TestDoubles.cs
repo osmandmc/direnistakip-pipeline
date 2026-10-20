@@ -73,6 +73,15 @@ internal sealed class InMemoryLedger : ILedgerStore
         var next = offset + items.Count < matches.Count ? (offset + items.Count).ToString() : null;
         return Task.FromResult(new LedgerPage(items, next));
     }
+
+    public async Task<int> CountAsync(LedgerQuery query, CancellationToken ct = default) =>
+        (await QueryAsync(query, int.MaxValue, null, ct)).Items.Count;
+
+    // Cosmos uses the last write time; here the latest stage or outcome time stands in for it.
+    public Task<IReadOnlyList<LedgerRecord>> ChangedSinceAsync(DateTimeOffset since, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<LedgerRecord>>(Records.Values
+            .Where(r => r.Stages.Values.Select(s => s.At).Append(r.Outcome?.At ?? DateTimeOffset.MinValue).Max() >= since)
+            .ToList());
 }
 
 internal sealed class InMemoryParsed : IParsedStore

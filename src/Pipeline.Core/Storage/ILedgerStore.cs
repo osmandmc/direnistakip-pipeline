@@ -21,6 +21,12 @@ public interface ILedgerStore
 
     /// <summary>Newest first by list date. <paramref name="continuation"/> is the previous page's <see cref="LedgerPage.Next"/>.</summary>
     Task<LedgerPage> QueryAsync(LedgerQuery query, int pageSize, string? continuation, CancellationToken ct = default);
+
+    /// <summary>How many records match (same filters as <see cref="QueryAsync"/>).</summary>
+    Task<int> CountAsync(LedgerQuery query, CancellationToken ct = default);
+
+    /// <summary>Every record written since the given moment (submitted, a stage recorded, an outcome set …). For metrics.</summary>
+    Task<IReadOnlyList<LedgerRecord>> ChangedSinceAsync(DateTimeOffset since, CancellationToken ct = default);
 }
 
 public enum ArticleStatusFilter

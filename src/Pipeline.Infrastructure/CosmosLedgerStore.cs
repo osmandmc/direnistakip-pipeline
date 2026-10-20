@@ -81,8 +81,64 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
 
     public async Task<LedgerPage> QueryAsync(LedgerQuery query, int pageSize, string? continuation, CancellationToken ct = default)
     {
+        var definition = Where("SELECT * FROM c", query, " ORDER BY c.listDate DESC");
+
+        using var results = container.GetItemQueryIterator<LedgerRecord>(
+            definition,
+            ContinuationToken.Decode(continuation),
+            new QueryRequestOptions { MaxItemCount = pageSize, ResponseContinuationTokenLimitInKb = 4 });
+
+        // A query across partitions can return an empty page that still has more behind it.
+        FeedResponse<LedgerRecord>? page = null;
+        try
+        {
+            while (results.HasMoreResults)
+            {
+                page = await results.ReadNextAsync(ct);
+                if (page.Count > 0)
+                {
+                    break;
+                }
+            }
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.BadRequest && continuation is not null)
+        {
+            throw new ArgumentException("Invalid 'next' value.", nameof(continuation), ex);
+        }
+        return page is null
+            ? new LedgerPage([], null)
+            : new LedgerPage(page.ToList(), ContinuationToken.Encode(page.ContinuationToken));
+    }
+
+    public async Task<int> CountAsync(LedgerQuery query, CancellationToken ct = default)
+    {
+        using var results = container.GetItemQueryIterator<int>(Where("SELECT VALUE COUNT(1) FROM c", query, ""));
+        var total = 0;
+        while (results.HasMoreResults)
+        {
+            total += (await results.ReadNextAsync(ct)).Sum();
+        }
+        return total;
+    }
+
+    // _ts is when Cosmos last wrote the record (whole seconds): every submission, stage and outcome updates it.
+    public async Task<IReadOnlyList<LedgerRecord>> ChangedSinceAsync(DateTimeOffset since, CancellationToken ct = default)
+    {
+        var definition = new QueryDefinition("SELECT * FROM c WHERE c._ts >= @since").WithParameter("@since", since.ToUnixTimeSeconds());
+        using var results = container.GetItemQueryIterator<LedgerRecord>(definition);
+        var records = new List<LedgerRecord>();
+        while (results.HasMoreResults)
+        {
+            records.AddRange(await results.ReadNextAsync(ct));
+        }
+        return records;
+    }
+
+    /// <summary>The query's filters as SQL, shared by the list and the count.</summary>
+    private static QueryDefinition Where(string select, LedgerQuery query, string orderBy)
+    {
         // Records created before list dates existed have none and are left out.
-        var sql = new StringBuilder("SELECT * FROM c WHERE IS_DEFINED(c.listDate)");
+        var sql = new StringBuilder(select + " WHERE IS_DEFINED(c.listDate)");
         var parameters = new List<(string Name, object Value)>();
         if (query.SourceId is not null)
         {
@@ -120,39 +176,14 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
             parameters.Add(("@folded", TitleSearch.Fold(text)));
             parameters.Add(("@text", text));
         }
-        sql.Append(" ORDER BY c.listDate DESC");
+        sql.Append(orderBy);
 
         var definition = new QueryDefinition(sql.ToString());
         foreach (var (name, value) in parameters)
         {
             definition = definition.WithParameter(name, value);
         }
-
-        using var results = container.GetItemQueryIterator<LedgerRecord>(
-            definition,
-            ContinuationToken.Decode(continuation),
-            new QueryRequestOptions { MaxItemCount = pageSize, ResponseContinuationTokenLimitInKb = 4 });
-
-        // A query across partitions can return an empty page that still has more behind it.
-        FeedResponse<LedgerRecord>? page = null;
-        try
-        {
-            while (results.HasMoreResults)
-            {
-                page = await results.ReadNextAsync(ct);
-                if (page.Count > 0)
-                {
-                    break;
-                }
-            }
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.BadRequest && continuation is not null)
-        {
-            throw new ArgumentException("Invalid 'next' value.", nameof(continuation), ex);
-        }
-        return page is null
-            ? new LedgerPage([], null)
-            : new LedgerPage(page.ToList(), ContinuationToken.Encode(page.ContinuationToken));
+        return definition;
     }
 }
 

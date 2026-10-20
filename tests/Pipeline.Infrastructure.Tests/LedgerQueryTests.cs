@@ -158,4 +158,27 @@ public class LedgerQueryTests(EmulatorFixture emulators)
 
         Assert.Equal([id], await AllIds(new LedgerQuery(_source, TitleContains: "METAL")));
     }
+
+    [Fact]
+    public async Task CountsWithTheListsFilters()
+    {
+        await Parsed(Oct(14));
+        var handled = await Parsed(Oct(15));
+        await _store.SetOutcomeAsync(handled, new ArticleOutcome(OutcomeKind.Dismissed, DateTimeOffset.UtcNow));
+
+        Assert.Equal(1, await _store.CountAsync(new LedgerQuery(_source)));
+        Assert.Equal(2, await _store.CountAsync(new LedgerQuery(_source, Outcome: OutcomeFilter.Any)));
+    }
+
+    [Fact]
+    public async Task ChangedSinceFindsRecentlyWrittenRecords()
+    {
+        var before = DateTimeOffset.UtcNow.AddSeconds(-2);
+        var id = await Parsed(Oct(16));
+
+        var records = await _store.ChangedSinceAsync(before);
+
+        Assert.Contains(records, r => r.Id == id);
+        Assert.DoesNotContain(await _store.ChangedSinceAsync(DateTimeOffset.UtcNow.AddHours(1)), r => r.Id == id);
+    }
 }
