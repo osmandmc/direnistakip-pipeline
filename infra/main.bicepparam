@@ -7,5 +7,8 @@ param location = 'swedencentral'
 param monthlyBudget = 5
 param budgetStartDate = '2026-10-01'
 
+// The RSS timer (E7). Set to true and run the infra workflow to start collecting.
+param feedCollectionEnabled = false
+
 // Kept out of the repository; set as a GitHub variable (BUDGET_EMAIL) or local env var.
 param budgetContactEmail = readEnvironmentVariable('BUDGET_EMAIL', '')

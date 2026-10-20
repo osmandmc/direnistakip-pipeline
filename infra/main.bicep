@@ -20,6 +20,9 @@ param budgetContactEmail string = ''
 @description('Only one free-tier Cosmos DB account is allowed per subscription.')
 param cosmosFreeTier bool = true
 
+@description('Read news feeds (Evrensel RSS) every two hours. Off until decided (E7).')
+param feedCollectionEnabled bool = false
+
 var suffix = uniqueString(resourceGroup().id, environmentName)
 var tags = {
   project: 'direnistakip-pipeline'
@@ -221,6 +224,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'Cosmos__Database', value: cosmosDb.name }
         { name: 'KeyVault__Uri', value: keyVault.properties.vaultUri }
         { name: 'RawHtml__Container', value: rawHtmlContainer.name }
+        { name: 'FeedCollection__Enabled', value: string(feedCollectionEnabled) }
       ]
     }
     functionAppConfig: {

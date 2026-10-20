@@ -114,7 +114,7 @@ flowchart TB
 | Function | Trigger | Reads | Writes | Sends to | Phase |
 |---|---|---|---|---|---|
 | SubmitArticles | HTTP `POST /articles` (CSV rows, manual URL) | Ledger (already known?) | Ledger: Submitted | article-submitted | 2 |
-| Discover (Collector) | Timer, one per source | Source listing pages, ledger | Ledger: Submitted | article-submitted | 5 |
+| Discover (Collector) | Timer `CollectFeeds`, every 2 h; sources with a feed (Evrensel RSS since E7) | Source feed, ledger | Ledger: Submitted | article-submitted | 2 |
 | Fetch | Queue article-submitted | News site | Blob raw HTML, ledger: Fetched | article-fetched | 2 |
 | Parse | Queue article-fetched | Blob raw HTML | Parsed record, ledger: Parsed | article-parsed | 2 |
 | Relevance | Queue article-parsed | Parsed record, prompt; LLM | Relevance record, ledger | article-relevant (if relevant / uncertain) | 4 ¹ |
@@ -249,20 +249,22 @@ sequenceDiagram
 
 Suggested case action (D-012): new resistance + protest · new protest on existing resistance · link article only. The researcher always confirms.
 
-### 4.3 Collection — Discover (phase 5)
+### 4.3 Collection — Discover
+
+Evrensel since E7: one timer (`CollectFeeds`, every two hours at :05) reads the RSS feed of each enabled source that has one (`SourceCatalog`) and submits its links through the same path as `POST /articles`. Evrensel's feed holds about 100 articles (≈ 14 hours), so a missed run loses nothing; known links come back as duplicates. Switched on by the app setting `FeedCollection__Enabled` (infra parameter `feedCollectionEnabled`, off by default). Sources without a usable feed would read listing pages instead (phase 5).
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant T as Timer (per source)
+    participant T as Timer (every 2 h)
     participant C as Collector
     participant SRC as News site
     participant S as Ledger
     participant Q as Stage queues
 
     T->>C: Trigger
-    C->>SRC: Read section / listing pages
-    SRC-->>C: Article links
+    C->>SRC: Read the RSS feed
+    SRC-->>C: Article links, titles, dates
     loop each link
         C->>C: Canonicalise → ArticleId
         C->>S: Known?
@@ -304,7 +306,7 @@ sequenceDiagram
 2. **Walking skeleton** — CSV adapter → fetch → parse → ledger and funnel, no AI.
 3. **Extraction** — drafts and pre-fill in the review screen.
 4. **Relevance** — stage before extraction.
-5. **Collector** — timer per source; retire the CSV upload.
+5. **Collector** — timer per source; retire the CSV upload. *Evrensel's RSS feed done early (E7).*
 
 **Before phase 2 — discovery spikes:** fetch from Azure for each source · form field inventory · review the Python prototype · `News` backfill dry-run.
 
