@@ -2,8 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Pipeline.Core.Sources;
 
-/// <summary>A news source. Only enabled sources are taken into the pipeline.</summary>
-public sealed record Source(string Id, string Name, IReadOnlyList<string> Hosts, bool Enabled = false);
+/// <summary>A news source. Only enabled sources are taken into the pipeline; those with a feed are also collected on a timer.</summary>
+public sealed record Source(string Id, string Name, IReadOnlyList<string> Hosts, bool Enabled = false, string? FeedUrl = null);
 
 /// <summary>
 /// Known news sources. Hosts are canonical (no www./m. prefix; numbered mirror domains
@@ -14,7 +14,8 @@ public static class SourceCatalog
     public static readonly IReadOnlyList<Source> All =
     [
         // Enabled one at a time as Fetch and Parse support them (phase 2a: Evrensel only).
-        new("evrensel", "Evrensel", ["evrensel.net"], Enabled: true),
+        // Evrensel's news feed holds about the last 100 articles (≈ 14 hours), so a missed run loses nothing.
+        new("evrensel", "Evrensel", ["evrensel.net"], Enabled: true, FeedUrl: "https://www.evrensel.net/rss/haber.xml"),
         new("sendika", "Sendika.org", ["sendika.org"]),
         new("kizilbayrak", "Kızılbayrak", ["kizilbayrak.net"]),
         new("birgun", "BirGün", ["birgun.net"]),

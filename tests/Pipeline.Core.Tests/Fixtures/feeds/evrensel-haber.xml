@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:media="http://search.yahoo.com/mrss/" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+			<channel>
+			<title>Evrensel.net</title>
+			<link>https://www.evrensel.net</link>
+			<language>tr-TR</language>
+			<description>Emek Evrenseldir</description>
+			<image>
+				<title>Evrensel.net</title>
+				<url>https://www.evrensel.net/apple-icon-114x114.png</url>
+				<link>https://www.evrensel.net</link>
+			</image>
+			<generator>Evrensel.net</generator>
+											<item>
+					<title>Avukat Afşin Hatipoğlu: canlı yayında tehdit edildim</title>
+					<link>https://www.evrensel.net/haber/6005816/avukat-afsin-hatipoglu-canli-yayinda-tehdit-edildim?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_syndication</link>
+					<description>Avukat Afşin Hatipoğlu, Sözcü TV programı sırasında bir kişinin yayını terk etmemesi halinde öldürmekle tehdit ettiğini ve 5 milyon lira istediğini belirterek, emniyetle koruma talepli randevusunun iptal edildiğini bildirdi.</description>
+					<pubDate>Tue, 20 Oct 2026 17:16:00 +0300</pubDate>
+					<category>Güncel</category>
+					<guid>https://www.evrensel.net/haber/6005816/avukat-afsin-hatipoglu-canli-yayinda-tehdit-edildim</guid>
+					<media:content width="140" url="https://www.evrensel.net/images/1280/upload/dosya/367207.jpg"></media:content>
+				</item>
+				<item>
+					<title>Yeni Yol Partisi'nden istifa eden Kani Torun, AKP'ye geçti</title>
+					<link>https://www.evrensel.net/haber/6005813/yeni-yol-partisinden-istifa-eden-kani-torun-akpye-gecti?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_syndication</link>
+					<description>Yeni Yol Partisi'nden 31 Ağustos'ta istifa eden Bursa Milletvekili Kani Torun, AKP'ye geçti. Torun'a parti rozetini AKP Genel Başkanı ve Cumhurbaşkanı Recep Tayyip Erdoğan taktı.</description>
+					<pubDate>Tue, 20 Oct 2026 17:05:00 +0300</pubDate>
+					<category>Poli̇ti̇ka</category>
+					<guid>https://www.evrensel.net/haber/6005813/yeni-yol-partisinden-istifa-eden-kani-torun-akpye-gecti</guid>
+					<media:content width="140" url="https://www.evrensel.net/images/1280/upload/dosya/367205.jpg"></media:content>
+				</item>
+				<item>
+					<title>DİSK Bursa'dan seslendi: Gelirde, vergide ve ülkede adalet istiyoruz</title>
+					<link>https://www.evrensel.net/haber/6005814/disk-bursadan-seslendi-gelirde-vergide-ve-ulkede-adalet-istiyoruz?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_syndication</link>
+					<description>DİSK Emekçi Buluşması'nın beşincisini Bursa Kent Meydanı'nda gerçekleştirdi.</description>
+					<pubDate>Tue, 20 Oct 2026 17:05:00 +0300</pubDate>
+					<category>İşçi̇-Sendi̇ka</category>
+					<guid>https://www.evrensel.net/haber/6005814/disk-bursadan-seslendi-gelirde-vergide-ve-ulkede-adalet-istiyoruz</guid>
+					<media:content width="140" url="https://www.evrensel.net/images/1280/upload/dosya/367206.jpg"></media:content>
+				</item>
+			</channel>
+</rss>
