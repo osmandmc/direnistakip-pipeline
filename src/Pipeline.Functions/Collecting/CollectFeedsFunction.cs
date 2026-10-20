@@ -1,16 +1,19 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Pipeline.Contracts;
 using Pipeline.Core.Collecting;
-using Pipeline.Core.Sources;
 
 namespace Pipeline.Functions.Collecting;
 
 /// <summary>
-/// Every two hours (at :05) reads the feed of each enabled source that has one and submits new articles.
-/// Switched off unless the app setting <c>FeedCollection__Enabled</c> is true (infra parameter <c>feedCollectionEnabled</c>).
+/// Reads the feeds of the enabled sources and submits new articles: every two hours (at :05, UTC) when the app setting
+/// <c>FeedCollection__Enabled</c> is true (infra parameter <c>feedCollectionEnabled</c>), and on request with
+/// <c>POST /api/collect</c> (function key; works even when the timer is switched off).
 /// </summary>
-public sealed class CollectFeedsFunction(FeedCollector collector, IConfiguration configuration, ILogger<CollectFeedsFunction> logger)
+public sealed class CollectFeedsFunction(FeedCollection collection, IConfiguration configuration, ILogger<CollectFeedsFunction> logger)
 {
     public const string EnabledSetting = "FeedCollection:Enabled";
 
@@ -22,19 +25,37 @@ public sealed class CollectFeedsFunction(FeedCollector collector, IConfiguration
             logger.LogInformation("Feed collection is switched off ({Setting})", EnabledSetting);
             return;
         }
-        foreach (var source in SourceCatalog.All.Where(s => s.Enabled && s.FeedUrl is not null))
+        Log(await collection.RunAsync(ct: ct), "timer");
+    }
+
+    /// <summary><c>POST /api/collect</c> or <c>POST /api/collect?source=evrensel</c>: collect now and report per feed.</summary>
+    [Function("CollectNow")]
+    public async Task<IActionResult> CollectNow(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "collect")] HttpRequest req,
+        CancellationToken ct)
+    {
+        var source = req.Query["source"].FirstOrDefault();
+        if (source is not null && !FeedCollection.FeedSources.Any(s => s.Id == source))
         {
-            try
+            return new BadRequestObjectResult(new { error = $"'source' is one of: {string.Join(", ", FeedCollection.FeedSources.Select(s => s.Id))}" });
+        }
+        var runs = await collection.RunAsync(source, ct);
+        Log(runs, "request");
+        return new OkObjectResult(new CollectResponse(runs));
+    }
+
+    private void Log(IReadOnlyList<FeedRun> runs, string trigger)
+    {
+        foreach (var run in runs)
+        {
+            if (run.Error is null)
             {
-                var result = await collector.CollectAsync(source, ct);
-                logger.LogInformation(
-                    "Feed {Source}: {Found} found, {Accepted} new, {Duplicate} known, {Rejected} rejected",
-                    result.SourceId, result.Found, result.Accepted, result.Duplicate, result.Rejected);
+                logger.LogInformation("Feed {Source} ({Trigger}): {Found} found, {Accepted} new, {Duplicate} known, {Rejected} rejected",
+                    run.SourceId, trigger, run.Found, run.Accepted, run.Duplicate, run.Rejected);
             }
-            catch (Exception ex) when (ex is HttpRequestException or FormatException or TaskCanceledException && !ct.IsCancellationRequested)
+            else
             {
-                // One source's feed failing does not stop the others; the next run tries again.
-                logger.LogWarning(ex, "Feed {Source} could not be read: {Message}", source.Id, ex.Message);
+                logger.LogWarning("Feed {Source} ({Trigger}) could not be read: {Error}", run.SourceId, trigger, run.Error);
             }
         }
     }
