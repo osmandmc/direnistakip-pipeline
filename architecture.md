@@ -137,6 +137,7 @@ flowchart TB
 | `POST /articles/{id}/outcome` | App after save (D-011) |
 | `GET /metrics?days=14` | Funnel dashboard: per source (latest arrival, received, failed, open inbox), per day (received, read, failed, linked, dismissed) and the latest failures; counted on request (D-015 update) |
 | `POST /collect` (`?source=evrensel`) | Collect the feeds now, as the timer does, even when the timer is switched off; answers per feed: found, new, known, rejected, or why it could not be read |
+| `POST /articles/reparse?source=evrensel` (`&version=evrensel-1`) | Parse stored pages again with the current parser: articles whose parsing failed, or those read by that parser version; handled articles are left alone; no download; at most 200 per call (`more` says whether to call again) |
 | `GET /health` | Deployment check |
 
 ### 2.2 App-side work (direnistakip, SmarterASP)

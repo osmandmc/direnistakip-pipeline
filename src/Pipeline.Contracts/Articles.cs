@@ -29,3 +29,9 @@ public sealed record ArticleDetail(
     string? Body,
     string? ParserVersion,
     ArticleOutcome? Outcome = null);
+
+/// <summary>
+/// <c>POST /articles/reparse</c>: articles parsed again from their stored pages. More: there were more than one run
+/// handles; call again (articles that parsed now no longer match "failed").
+/// </summary>
+public sealed record ReparseResponse(int Examined, int Parsed, int StillFailed, int NoStoredPage, bool More);

@@ -33,4 +33,16 @@ public class RawHtmlStoreTests(EmulatorFixture emulators)
         Assert.Equal("<p>v1</p>", await _store.ReadAsync(first));
         Assert.Equal("<p>v2</p>", await _store.ReadAsync(second));
     }
+
+    [Fact]
+    public async Task FindsTheLatestSavedPageOfAnArticle()
+    {
+        var articleId = Guid.NewGuid().ToString("N");
+        var now = DateTimeOffset.UtcNow;
+        await _store.SaveAsync("evrensel", articleId, "<p>v1</p>", now);
+        var later = await _store.SaveAsync("evrensel", articleId, "<p>v2</p>", now.AddMinutes(5));
+
+        Assert.Equal(later, await _store.FindLatestAsync("evrensel", articleId));
+        Assert.Null(await _store.FindLatestAsync("evrensel", Guid.NewGuid().ToString("N")));
+    }
 }

@@ -7,4 +7,7 @@ public interface IRawHtmlStore
     Task<string> SaveAsync(string sourceId, string articleId, string html, DateTimeOffset fetchedAt, CancellationToken ct = default);
 
     Task<string> ReadAsync(string path, CancellationToken ct = default);
+
+    /// <summary>The path of the article's most recently saved page, or null when none was saved (e.g. it came with its text).</summary>
+    Task<string?> FindLatestAsync(string sourceId, string articleId, CancellationToken ct = default);
 }

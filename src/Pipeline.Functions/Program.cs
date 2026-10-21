@@ -32,6 +32,7 @@ builder.Services.AddSingleton<ArticleSubmission>();
 // One parser per enabled source.
 builder.Services.AddSingleton<IArticleParser, EvrenselParser>();
 builder.Services.AddSingleton<ArticleParsing>();
+builder.Services.AddSingleton<ArticleReparsing>();
 
 // Read API (D-009).
 builder.Services.AddSingleton<ArticleQueries>();
