@@ -29,11 +29,29 @@ public sealed class ArticleParsing(
         {
             return; // Delivered twice, or the article came with content.
         }
+        await ParseStoredPageAsync(article, ct);
+    }
 
+    /// <summary>
+    /// Parses the article's latest stored page again with the current parser (B8), also when it was parsed before; no
+    /// download. Null when there is no stored page; otherwise whether it parsed now.
+    /// </summary>
+    public async Task<bool?> ReparseAsync(LedgerRecord record, CancellationToken ct = default)
+    {
+        if (await rawHtml.FindLatestAsync(record.SourceId, record.Id, ct) is not { } path)
+        {
+            return null;
+        }
+        var fetchedAt = record.Stages.TryGetValue(Stage.Fetched, out var fetched) ? fetched.At : clock.GetUtcNow();
+        return await ParseStoredPageAsync(new ArticleFetched(record.Id, record.SourceId, path, record.Url, fetchedAt), ct);
+    }
+
+    private async Task<bool> ParseStoredPageAsync(ArticleFetched article, CancellationToken ct)
+    {
         if (!_parsers.TryGetValue(article.SourceId, out var parser))
         {
             await RecordFailureAsync(article.ArticleId, null, $"No parser for source '{article.SourceId}'", ct);
-            return;
+            return false;
         }
 
         var html = await rawHtml.ReadAsync(article.RawHtmlPath, ct);
@@ -50,7 +68,7 @@ public sealed class ArticleParsing(
         if (!result.Succeeded)
         {
             await RecordFailureAsync(article.ArticleId, parser.Version, result.Failure!, ct);
-            return;
+            return false;
         }
 
         var now = clock.GetUtcNow();
@@ -65,6 +83,7 @@ public sealed class ArticleParsing(
             QueueNames.ArticleParsed,
             new ArticleParsed(article.ArticleId, article.SourceId, parsedArticle.Id, parser.Version, now),
             ct);
+        return true;
     }
 
     private Task RecordFailureAsync(string articleId, string? version, string reason, CancellationToken ct) =>

@@ -110,6 +110,9 @@ internal sealed class InMemoryRawHtml : IRawHtmlStore
     }
 
     public Task<string> ReadAsync(string path, CancellationToken ct = default) => Task.FromResult(Files[path]);
+
+    public Task<string?> FindLatestAsync(string sourceId, string articleId, CancellationToken ct = default) =>
+        Task.FromResult(Files.Keys.Where(k => k.StartsWith($"{sourceId}/{articleId}/", StringComparison.Ordinal)).Order(StringComparer.Ordinal).LastOrDefault());
 }
 
 internal sealed class RecordingQueue : IQueueSender

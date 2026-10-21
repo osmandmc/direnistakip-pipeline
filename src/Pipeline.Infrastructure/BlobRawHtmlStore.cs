@@ -31,6 +31,20 @@ internal sealed class BlobRawHtmlStore(BlobContainerClient container) : IRawHtml
         return path;
     }
 
+    // Names start with the fetch time (UTC, fixed width), so the last name is the latest page.
+    public async Task<string?> FindLatestAsync(string sourceId, string articleId, CancellationToken ct = default)
+    {
+        string? latest = null;
+        await foreach (var blob in container.GetBlobsAsync(prefix: $"{sourceId}/{articleId}/", cancellationToken: ct))
+        {
+            if (latest is null || string.CompareOrdinal(blob.Name, latest) > 0)
+            {
+                latest = blob.Name;
+            }
+        }
+        return latest;
+    }
+
     public async Task<string> ReadAsync(string path, CancellationToken ct = default)
     {
         var download = await container.GetBlobClient(path).DownloadContentAsync(ct);
