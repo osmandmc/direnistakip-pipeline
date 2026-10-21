@@ -46,13 +46,13 @@ public class ArticleParsingTests
         await _parsing.ParseAsync(fetched);
 
         var saved = Assert.Single(_parsed.Saved);
-        Assert.Equal("evrensel-1", saved.ParserVersion);
+        Assert.Equal(new EvrenselParser().Version, saved.ParserVersion);
         Assert.Equal(fetched.RawHtmlPath, saved.RawHtmlPath);
         Assert.Equal("Başlık", saved.Title);
         Assert.Equal("Birinci paragraf.", saved.Body);
 
         Assert.Equal(StageStatus.Succeeded, Parsed.Status);
-        Assert.Equal("evrensel-1", Parsed.Version);
+        Assert.Equal(new EvrenselParser().Version, Parsed.Version);
         Assert.Equal("Başlık", _ledger.Records[ArticleId].Title); // copied for the inbox list
 
         var (queueName, message) = Assert.Single(_queue.Sent);

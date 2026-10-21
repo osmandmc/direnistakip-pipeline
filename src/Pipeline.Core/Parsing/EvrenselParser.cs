@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
@@ -7,9 +7,10 @@ using AngleSharp.Html.Parser;
 namespace Pipeline.Core.Parsing;
 
 /// <summary>
-/// Evrensel article pages (structure checked on 2026-10-18; docs/spikes/t4-fetch-spike.md).
+/// Evrensel article pages (structure checked on 2026-10-18; docs/spikes/t4-fetch-spike.md; second layout 2026-10-21).
 /// Pages pre-load other stories further down that reuse the same class names, so every rule
-/// is scoped to the first &lt;article&gt; element.
+/// is scoped to the first &lt;article&gt; element. Two layouts: news in <c>div.news-content</c>; explainer and service
+/// pages ("… ne zaman", "… nasıl yapılır") in <c>[property=articleBody]</c>, whose HTML holds only the introduction.
 /// </summary>
 public sealed partial class EvrenselParser : IArticleParser
 {
@@ -17,7 +18,8 @@ public sealed partial class EvrenselParser : IArticleParser
 
     public string SourceId => "evrensel";
 
-    public string Version => "evrensel-1";
+    // evrensel-2: the articleBody layout, and text inside plain wrapper divs (2026-10-21).
+    public string Version => "evrensel-2";
 
     public ParseResult Parse(string html)
     {
@@ -55,17 +57,22 @@ public sealed partial class EvrenselParser : IArticleParser
         return ParseResult.Success(title, publishedAt, string.Join("\n\n", paragraphs));
     }
 
-    // Only direct children of the text container: the subscription box and ads sit in nested divs.
+    // Paragraphs of the text container, in order. Divs with a class hold ads and the subscription box and are skipped;
+    // plain divs (no class) only wrap text, e.g. a box pasted from Word, and are read through.
     private static List<string> BodyParagraphs(IElement article)
     {
         var paragraphs = new List<string>();
-        var content = article.QuerySelector("div.news-content");
-        if (content is null)
+        var content = article.QuerySelector("div.news-content") ?? article.QuerySelector("[property='articleBody']");
+        if (content is not null)
         {
-            return paragraphs;
+            AddParagraphs(content, paragraphs);
         }
+        return paragraphs;
+    }
 
-        foreach (var element in content.Children)
+    private static void AddParagraphs(IElement container, List<string> paragraphs)
+    {
+        foreach (var element in container.Children)
         {
             switch (element.LocalName)
             {
@@ -84,9 +91,11 @@ public sealed partial class EvrenselParser : IArticleParser
                         }
                     }
                     break;
+                case "div" when !element.HasAttribute("class") && !element.HasAttribute("id"):
+                    AddParagraphs(element, paragraphs);
+                    break;
             }
         }
-        return paragraphs;
     }
 
     private static DateTimeOffset? JsonLdDatePublished(IDocument document)

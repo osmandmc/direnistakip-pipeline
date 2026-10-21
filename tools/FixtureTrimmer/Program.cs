@@ -1,6 +1,6 @@
-// Trims a saved news page into a small parser test fixture, so the repository keeps the page
+﻿// Trims a saved news page into a small parser test fixture, so the repository keeps the page
 // structure without republishing the article. Keeps: head metadata, JSON-LD, the first <article>
-// with its title, lead and first few body elements, each shortened to its first sentence.
+// with its title, lead and first few body elements (also inside plain wrapper divs), each shortened to its first sentence.
 // Removes: other scripts, styles, menus, footer, ads, subscription boxes, the rest of the text.
 //
 // Usage: dotnet run --project tools/FixtureTrimmer -- <page.html> <fixture.html>
@@ -57,19 +57,29 @@ if (article.QuerySelector("h2.article-spot") is { } lead)
 {
     lead.TextContent = FirstSentence(lead.TextContent);
 }
-if (article.QuerySelector("div.news-content") is { } content)
+// The text container: news-content, or articleBody on explainer pages; plain wrapper divs inside are trimmed the same way.
+if ((article.QuerySelector("div.news-content") ?? article.QuerySelector("[property='articleBody']")) is { } content)
 {
     var kept = 0;
-    foreach (var element in content.Children.ToList())
+    Trim(content);
+
+    void Trim(IElement container)
     {
-        if (element.LocalName is "p" or "h2" or "h3" or "h4" or "blockquote" or "ul" or "ol" && kept < KeepBodyElements)
+        foreach (var element in container.Children.ToList())
         {
-            element.TextContent = FirstSentence(element.TextContent);
-            kept++;
-        }
-        else
-        {
-            element.Remove();
+            if (element.LocalName == "div" && !element.HasAttribute("class") && !element.HasAttribute("id"))
+            {
+                Trim(element);
+            }
+            else if (element.LocalName is "p" or "h2" or "h3" or "h4" or "blockquote" or "ul" or "ol" && kept < KeepBodyElements)
+            {
+                element.TextContent = FirstSentence(element.TextContent);
+                kept++;
+            }
+            else
+            {
+                element.Remove();
+            }
         }
     }
 }
