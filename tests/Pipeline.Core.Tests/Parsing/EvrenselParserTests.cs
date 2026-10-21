@@ -1,4 +1,4 @@
-using Pipeline.Core.Parsing;
+﻿using Pipeline.Core.Parsing;
 
 namespace Pipeline.Core.Tests.Parsing;
 
@@ -54,6 +54,8 @@ public class EvrenselParserTests
     [InlineData("6005544")]
     [InlineData("6005545")]
     [InlineData("6005546")]
+    [InlineData("6005776")] // text inside a plain wrapper div
+    [InlineData("6005790")] // explainer page: articleBody layout
     public void EverySampleParsesCleanly(string articleNumber)
     {
         var result = _parser.Parse(Fixture(articleNumber));
@@ -68,6 +70,37 @@ public class EvrenselParserTests
         Assert.DoesNotContain("Sesli Yazılar", result.Body);
         Assert.DoesNotContain("KYK", result.Body);
     }
+
+    [Fact]
+    public void ReadsTextInsideAPlainWrapperDiv()
+    {
+        // A box pasted from Word: the whole text sits in one unclassed div inside news-content.
+        var result = _parser.Parse(Fixture("6005776"));
+
+        Assert.True(result.Succeeded, result.Failure);
+        Assert.Contains("Çanakkale — İstanbul'da 14 Ekim'de", result.Body);
+        Assert.Contains("Ekim ayı ortalamasını dörde katlayan meteorolojik tablo", result.Body); // a subheading inside the wrapper
+    }
+
+    [Fact]
+    public void ReadsTheArticleBodyLayoutOfExplainerPages()
+    {
+        // "… ne zaman" pages have no news-content; their HTML carries the introduction in [property=articleBody].
+        var result = _parser.Parse(Fixture("6005790"));
+
+        Assert.True(result.Succeeded, result.Failure);
+        Assert.StartsWith("Orionid meteor yağmuru ne zaman", result.Title);
+        Assert.Contains("gözlem zamanı yaklaşıyor", result.Body);
+        Assert.DoesNotContain("tercih edilen kaynak", result.Body); // the Google button around it is not text
+    }
+
+    [Fact]
+    public void ClassedDivsInsideTheTextStaySkipped() =>
+        Assert.Equal("Metin.", _parser.Parse("""
+            <html><body><article><h1 class="articleTitle">Başlık</h1><div class="news-content">
+              <div><p>Metin.</p></div><div class="evr-sub"><p>Abone olun</p></div><div class="advertisement-area"><p>Reklam</p></div>
+            </div></article></body></html>
+            """).Body);
 
     [Fact]
     public void FallsBackToOgTitleAndJsonLdDate()
