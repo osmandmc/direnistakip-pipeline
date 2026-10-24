@@ -10,7 +10,9 @@ namespace Pipeline.Functions.Api;
 
 /// <summary>
 /// Read API for the direnistakip app (D-009). Requires a function key (D-025).
-/// <c>GET /api/articles?from=2026-10-01&amp;to=2026-10-31&amp;source=evrensel&amp;status=parsed&amp;outcome=open&amp;q=işçi&amp;pageSize=20&amp;next=…</c>
+/// <c>GET /api/articles?from=2026-10-01&amp;to=2026-10-31&amp;source=evrensel&amp;status=parsed&amp;outcome=open&amp;relevance=other&amp;q=işçi&amp;pageSize=20&amp;next=…</c>
+/// <c>relevance</c> (B10): <c>notRelevant</c> = judged not relevant by the Relevance stage; <c>other</c> = everything else
+/// (relevant, uncertain, not assessed); <c>any</c> (default).
 /// <c>q</c> searches titles (Turkish letters and case do not matter); a link in <c>q</c> finds that one article, ignoring the other filters.
 /// <c>GET /api/articles/{id}</c>
 /// </summary>
@@ -35,6 +37,11 @@ public sealed class ArticlesFunction(ArticleQueries queries)
         {
             return Error("'outcome' is one of: open, handled, any");
         }
+        var relevance = RelevanceFilter.Any;
+        if (req.Query["relevance"] is { Count: > 0 } relevanceText && !Enum.TryParse(relevanceText.ToString(), ignoreCase: true, out relevance))
+        {
+            return Error("'relevance' is one of: any, notRelevant, other");
+        }
         var search = req.Query["q"].ToString().Trim();
         if (search.Length > 0 && await queries.FindByUrlAsync(search, ct) is { } byUrl)
         {
@@ -56,7 +63,8 @@ public sealed class ArticlesFunction(ArticleQueries queries)
             Before: to is { } t ? TurkeyTime.StartOfDay(t.AddDays(1)) : null, // "to" includes the whole day
             Status: status,
             Outcome: outcome,
-            TitleContains: search.Length > 0 ? search : null);
+            TitleContains: search.Length > 0 ? search : null,
+            Relevance: relevance);
 
         try
         {
