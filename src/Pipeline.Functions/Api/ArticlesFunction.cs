@@ -12,7 +12,8 @@ namespace Pipeline.Functions.Api;
 /// Read API for the direnistakip app (D-009). Requires a function key (D-025).
 /// <c>GET /api/articles?from=2026-10-01&amp;to=2026-10-31&amp;source=evrensel&amp;status=parsed&amp;outcome=open&amp;relevance=other&amp;q=işçi&amp;pageSize=20&amp;next=…</c>
 /// <c>relevance</c> (B10): <c>notRelevant</c> = judged not relevant by the Relevance stage; <c>other</c> = everything else
-/// (relevant, uncertain, not assessed); <c>any</c> (default).
+/// (relevant, uncertain, not assessed); <c>any</c> (default). <c>draft</c> (B12): <c>ready</c> = an AI draft with a labour
+/// action; <c>none</c> = no such draft; <c>any</c> (default).
 /// <c>q</c> searches titles (Turkish letters and case do not matter); a link in <c>q</c> finds that one article, ignoring the other filters.
 /// <c>GET /api/articles/{id}</c>
 /// </summary>
@@ -42,6 +43,11 @@ public sealed class ArticlesFunction(ArticleQueries queries)
         {
             return Error("'relevance' is one of: any, notRelevant, other");
         }
+        var draft = DraftFilter.Any;
+        if (req.Query["draft"] is { Count: > 0 } draftText && !Enum.TryParse(draftText.ToString(), ignoreCase: true, out draft))
+        {
+            return Error("'draft' is one of: any, ready, none");
+        }
         var search = req.Query["q"].ToString().Trim();
         if (search.Length > 0 && await queries.FindByUrlAsync(search, ct) is { } byUrl)
         {
@@ -64,7 +70,8 @@ public sealed class ArticlesFunction(ArticleQueries queries)
             Status: status,
             Outcome: outcome,
             TitleContains: search.Length > 0 ? search : null,
-            Relevance: relevance);
+            Relevance: relevance,
+            Draft: draft);
 
         try
         {

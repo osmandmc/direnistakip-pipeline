@@ -26,6 +26,9 @@ param feedCollectionEnabled bool = false
 @description('Gemini model (name or alias) for the Relevance stage (B9); the exact model is recorded with every answer.')
 param geminiModel string = 'gemini-flash-lite-latest'
 
+@description('Gemini model for the Extract stage (B12). Flash-Lite: the free tier allows the full Flash only 20 requests a day.')
+param geminiExtractionModel string = 'gemini-flash-lite-latest'
+
 var suffix = uniqueString(resourceGroup().id, environmentName)
 var tags = {
   project: 'direnistakip-pipeline'
@@ -232,6 +235,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         // reference stays unresolved and the stage does nothing.
         { name: 'Gemini__ApiKey', value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=gemini-api-key)' }
         { name: 'Gemini__Model', value: geminiModel }
+        { name: 'Gemini__ExtractionModel', value: geminiExtractionModel }
       ]
     }
     functionAppConfig: {

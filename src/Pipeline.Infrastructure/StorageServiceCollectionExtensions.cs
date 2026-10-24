@@ -35,6 +35,7 @@ public static class StorageServiceCollectionExtensions
         services.AddSingleton<ILedgerStore>(sp => new CosmosLedgerStore(Db(sp).GetContainer(StorageNames.LedgerContainer)));
         services.AddSingleton<IParsedStore>(sp => new CosmosParsedStore(Db(sp).GetContainer(StorageNames.ParsedContainer)));
         services.AddSingleton<IRelevanceStore>(sp => new CosmosRelevanceStore(Db(sp).GetContainer(StorageNames.RelevanceContainer)));
+        services.AddSingleton<IDraftStore>(sp => new CosmosDraftStore(Db(sp).GetContainer(StorageNames.DraftsContainer)));
         services.AddSingleton<IRawHtmlStore>(sp => new BlobRawHtmlStore(
             sp.GetRequiredService<BlobServiceClient>().GetBlobContainerClient(StorageNames.RawHtmlBlobContainer)));
         services.AddSingleton<IQueueSender>(sp => new StorageQueueSender(sp.GetRequiredService<QueueServiceClient>()));

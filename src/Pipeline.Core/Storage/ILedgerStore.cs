@@ -63,6 +63,18 @@ public enum RelevanceFilter
     Other,
 }
 
+/// <summary>Whether the Extract stage left a draft (B12): the inbox's "Taslak hazır" tab.</summary>
+public enum DraftFilter
+{
+    Any,
+
+    /// <summary>A draft with a labour action in it.</summary>
+    Ready,
+
+    /// <summary>No such draft: not drafted (yet), failed, or the model found no action.</summary>
+    None,
+}
+
 /// <param name="From">Inclusive, compared with the list date.</param>
 /// <param name="Before">Exclusive.</param>
 /// <param name="TitleContains">Text the title must contain, compared in folded form (<see cref="Articles.TitleSearch"/>).</param>
@@ -73,7 +85,8 @@ public sealed record LedgerQuery(
     ArticleStatusFilter Status = ArticleStatusFilter.Parsed,
     OutcomeFilter Outcome = OutcomeFilter.Open,
     string? TitleContains = null,
-    RelevanceFilter Relevance = RelevanceFilter.Any);
+    RelevanceFilter Relevance = RelevanceFilter.Any,
+    DraftFilter Draft = DraftFilter.Any);
 
 /// <summary>A page of records; <see cref="Next"/> is an opaque token for the following page, or null.</summary>
 public sealed record LedgerPage(IReadOnlyList<LedgerRecord> Items, string? Next);

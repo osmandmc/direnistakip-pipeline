@@ -7,8 +7,11 @@
     <ProjectReference Include="..\Pipeline.Contracts\Pipeline.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- The relevance prompt is a document (docs/extraction); the code embeds that one file. -->
+    <!-- The prompts are documents (docs/extraction); the code embeds those files. -->
     <EmbeddedResource Include="..\..\docs\extraction\relevance-prompt.md" LogicalName="relevance-prompt.md" Link="Relevance\relevance-prompt.md" />
+    <!-- The extraction prompt (v2) and the list values it offers (B12). -->
+    <EmbeddedResource Include="..\..\docs\extraction\prompt.md" LogicalName="extraction-prompt.md" Link="Extraction\prompt.md" />
+    <EmbeddedResource Include="..\..\docs\extraction\lists.json" LogicalName="extraction-lists.json" Link="Extraction\lists.json" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Pipeline.Core.Tests" />

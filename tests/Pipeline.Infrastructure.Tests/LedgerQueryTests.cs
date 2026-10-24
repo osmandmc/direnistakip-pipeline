@@ -204,5 +204,18 @@ public class LedgerQueryTests(EmulatorFixture emulators)
         Assert.Equal(5, any.Count);
         Assert.Equal(1, await _store.CountAsync(new LedgerQuery(_source, Relevance: RelevanceFilter.NotRelevant)));
     }
+
+    [Fact]
+    public async Task ArticlesWithADraftAreListedApart()
+    {
+        var drafted = await Parsed(Oct(20));
+        var noEvent = await Parsed(Oct(19));
+        var notDrafted = await Parsed(Oct(18));
+        await _store.RecordStageAsync(drafted, Stage.Extracted, new(StageStatus.Succeeded, DateTimeOffset.UtcNow, "prompt-v2", "Örnek Metal · Fiili grev", "Draft"));
+        await _store.RecordStageAsync(noEvent, Stage.Extracted, new(StageStatus.Succeeded, DateTimeOffset.UtcNow, "prompt-v2", null, "NoEvent"));
+
+        Assert.Equal([drafted], await AllIds(new LedgerQuery(_source, Draft: DraftFilter.Ready)));
+        Assert.Equal([noEvent, notDrafted], await AllIds(new LedgerQuery(_source, Draft: DraftFilter.None)));
+    }
 }
 
