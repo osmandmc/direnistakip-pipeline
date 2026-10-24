@@ -14,4 +14,12 @@ internal sealed class StorageQueueSender(QueueServiceClient queues) : IQueueSend
     public Task SendAsync<T>(string queueName, T message, CancellationToken ct = default) =>
         queues.GetQueueClient(queueName)
             .SendMessageAsync(BinaryData.FromObjectAsJson(message, StorageClients.Json), timeToLive: NeverExpires, cancellationToken: ct);
+
+    // Storage queues allow a delay of up to 7 days.
+    public Task SendLaterAsync<T>(string queueName, T message, TimeSpan delay, CancellationToken ct = default) =>
+        queues.GetQueueClient(queueName).SendMessageAsync(
+            BinaryData.FromObjectAsJson(message, StorageClients.Json),
+            visibilityTimeout: delay < TimeSpan.Zero ? TimeSpan.Zero : delay > TimeSpan.FromDays(7) ? TimeSpan.FromDays(7) : delay,
+            timeToLive: NeverExpires,
+            cancellationToken: ct);
 }

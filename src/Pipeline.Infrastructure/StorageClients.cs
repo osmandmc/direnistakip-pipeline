@@ -11,6 +11,7 @@ internal static class StorageNames
 {
     public const string LedgerContainer = "ledger";
     public const string ParsedContainer = "parsed";
+    public const string RelevanceContainer = "relevance";
     public const string RawHtmlBlobContainer = "raw-html";
 }
 

@@ -23,4 +23,17 @@ public class QueueSenderTests(EmulatorFixture emulators)
         Assert.Equal(sent, JsonSerializer.Deserialize<ArticleSubmitted>(json, StorageClients.Json));
         Assert.True(received.ExpiresOn > DateTimeOffset.UtcNow.AddYears(1), "messages should not expire after the default 7 days");
     }
+
+    [Fact]
+    public async Task ALaterMessageStaysHiddenUntilItsTime()
+    {
+        var queue = emulators.Queues.GetQueueClient($"test-{Guid.NewGuid():N}");
+        await queue.CreateAsync();
+
+        await new StorageQueueSender(emulators.Queues).SendLaterAsync(queue.Name, new { articleId = "abc" }, TimeSpan.FromMinutes(5));
+
+        Assert.Null((await queue.ReceiveMessageAsync()).Value);
+        var peeked = (await queue.GetPropertiesAsync()).Value;
+        Assert.Equal(1, peeked.ApproximateMessagesCount);
+    }
 }

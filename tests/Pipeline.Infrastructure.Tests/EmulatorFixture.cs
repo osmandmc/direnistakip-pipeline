@@ -43,6 +43,7 @@ public sealed class EmulatorFixture : IAsyncLifetime
         Database = (await _cosmosClient.CreateDatabaseIfNotExistsAsync("pipeline-tests")).Database;
         await Database.CreateContainerIfNotExistsAsync(StorageNames.LedgerContainer, "/id");
         await Database.CreateContainerIfNotExistsAsync(StorageNames.ParsedContainer, "/articleId");
+        await Database.CreateContainerIfNotExistsAsync(StorageNames.RelevanceContainer, "/articleId");
 
         var storage = _azurite.GetConnectionString();
         RawHtml = new BlobServiceClient(storage).GetBlobContainerClient(StorageNames.RawHtmlBlobContainer);

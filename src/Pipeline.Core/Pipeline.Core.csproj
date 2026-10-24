@@ -7,6 +7,10 @@
     <ProjectReference Include="..\Pipeline.Contracts\Pipeline.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The relevance prompt is a document (docs/extraction); the code embeds that one file. -->
+    <EmbeddedResource Include="..\..\docs\extraction\relevance-prompt.md" LogicalName="relevance-prompt.md" Link="Relevance\relevance-prompt.md" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Pipeline.Core.Tests" />
   </ItemGroup>
 </Project>

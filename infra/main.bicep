@@ -23,6 +23,9 @@ param cosmosFreeTier bool = true
 @description('Read news feeds (Evrensel RSS) every two hours. Off until decided (E7).')
 param feedCollectionEnabled bool = false
 
+@description('Gemini model (name or alias) for the Relevance stage (B9); the exact model is recorded with every answer.')
+param geminiModel string = 'gemini-flash-lite-latest'
+
 var suffix = uniqueString(resourceGroup().id, environmentName)
 var tags = {
   project: 'direnistakip-pipeline'
@@ -225,6 +228,10 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'KeyVault__Uri', value: keyVault.properties.vaultUri }
         { name: 'RawHtml__Container', value: rawHtmlContainer.name }
         { name: 'FeedCollection__Enabled', value: string(feedCollectionEnabled) }
+        // Relevance stage (B9). The key is the Key Vault secret 'gemini-api-key', added by hand; while it is missing the
+        // reference stays unresolved and the stage does nothing.
+        { name: 'Gemini__ApiKey', value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=gemini-api-key)' }
+        { name: 'Gemini__Model', value: geminiModel }
       ]
     }
     functionAppConfig: {

@@ -112,3 +112,27 @@ are also İŞÇİ-SENDİKA. Filtering on the category removes little noise and d
    new case is created.
 5. **Next evaluation:** prompt v2 was written after the test answers were seen, so it must be scored on a fresh set of
    about 30 articles (new sample seed, dev and test ids excluded).
+
+## Relevance stage (B9, 2026-10-24)
+
+The pipeline's relevance prompt ([relevance-prompt.md](relevance-prompt.md), `relevance-v1`: title and the first 1,500
+characters → relevant / not relevant / uncertain + reason), run with `tools/RelevanceEval` on all 71 evaluation articles
+(dev and test). Model: `gemini-flash-lite-latest` (answered as `gemini-3.5-flash-lite`), free tier. A first run with the
+full Flash (`gemini-flash-latest`) failed on 15 of 21 calls ("high demand" or no answer within 60 s).
+
+| Researchers' decision | AI: relevant | AI: uncertain | AI: not relevant |
+|---|---|---|---|
+| Linked to a case (51) | **51** | 0 | **0** |
+| Dismissed (20) | 3 | 2 | **15** |
+
+- No linked article was rejected (recall 100%).
+- Uncertain: union pressure and transfers without an action; a culture piece about a dancer's lawsuit.
+- Dismissed but judged relevant: the May Day arrests and the Borusan resistance tent (labour actions dismissed for other
+  reasons, as in the extraction test) and one reader's letter supporting a strike (a real mistake: the prompt excludes
+  letters).
+
+**Caveats.** The dismissed articles were pre-selected by the old process, so they are harder than the feed's everyday
+noise, and the mix (51 to 20) is the reverse of the feed's. The prompt's exclusions were written after the test set had
+been scored, so the result is somewhat optimistic. The real measure is the inbox: verdicts against researchers' decisions
+and dismiss reasons (app R19c) over the first weeks.
+
