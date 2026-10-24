@@ -223,6 +223,10 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
     httpsOnly: true
     siteConfig: {
       minTlsVersion: '1.2'
+      // The portal's "Test/Run" calls the functions from the browser; calls still need the function key.
+      cors: {
+        allowedOrigins: ['https://portal.azure.com']
+      }
       appSettings: [
         { name: 'AzureWebJobsStorage__accountName', value: storage.name }
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }

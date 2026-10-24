@@ -203,6 +203,7 @@ public class LedgerQueryTests(EmulatorFixture emulators)
         Assert.Equal([relevant, uncertain, failed, notAssessed], other);
         Assert.Equal(5, any.Count);
         Assert.Equal(1, await _store.CountAsync(new LedgerQuery(_source, Relevance: RelevanceFilter.NotRelevant)));
+        Assert.Equal([failed, notAssessed], await AllIds(new LedgerQuery(_source, Relevance: RelevanceFilter.NotAssessed)));
     }
 
     [Fact]

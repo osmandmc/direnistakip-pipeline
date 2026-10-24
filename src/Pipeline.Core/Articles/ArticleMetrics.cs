@@ -1,4 +1,5 @@
 using Pipeline.Contracts;
+using Pipeline.Core.Relevance;
 using Pipeline.Core.Sources;
 using Pipeline.Core.Storage;
 
@@ -8,7 +9,7 @@ namespace Pipeline.Core.Articles;
 /// Counts for the app's dashboard, made on request from the ledger (D-015 update): fine while the ledger holds
 /// thousands of records; rollups can replace this behind the same response if it grows large.
 /// </summary>
-public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock)
+public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILanguageModel? model = null)
 {
     public const int DefaultDays = 14;
     public const int MaxDays = 31;
@@ -36,7 +37,8 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock)
             {
                 var today = events.Where(e => e.SourceId == source && e.Day == day).ToList();
                 int Count(string kind) => today.Count(e => e.Kind == kind);
-                return new DailyMetrics(day, source, Count(Received), Count(Parsed), Count(Failed), Count(Digested), Count(Dismissed));
+                return new DailyMetrics(day, source, Count(Received), Count(Parsed), Count(Failed), Count(Digested), Count(Dismissed),
+                    Count(AssessedRelevant), Count(AssessedUncertain), Count(AssessedNotRelevant), Count(Drafted));
             }))
             .ToList();
 
@@ -54,20 +56,37 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock)
                 .Where(r => r.SourceId == source && r.Stages.TryGetValue(Stage.Submitted, out var s) && InPeriod(s.At))
                 .OrderByDescending(r => r.Stages[Stage.Submitted].At)
                 .ToList();
-            var open = await ledger.CountAsync(new LedgerQuery(source, Status: ArticleStatusFilter.Parsed, Outcome: OutcomeFilter.Open), ct);
+            var openQuery = new LedgerQuery(source, Status: ArticleStatusFilter.Parsed, Outcome: OutcomeFilter.Open);
+            var open = await ledger.CountAsync(openQuery, ct);
             sources.Add(new SourceMetrics(
                 source,
                 received.FirstOrDefault()?.Stages[Stage.Submitted].At,
                 received.FirstOrDefault()?.Origin,
                 received.Count,
                 failures.Where(f => f.SourceId == source).Select(f => f.ArticleId).Distinct().Count(),
-                open));
+                open,
+                await ledger.CountAsync(openQuery with { Draft = DraftFilter.Ready }, ct),
+                await ledger.CountAsync(openQuery with { Relevance = RelevanceFilter.NotRelevant }, ct),
+                await ledger.CountAsync(openQuery with { Relevance = RelevanceFilter.NotAssessed }, ct)));
         }
 
-        return new MetricsResponse(from, to, sources, dailyMetrics, failures.Take(MaxFailures).ToList());
+        // What the AI said about the articles researchers decided in the period, against what they did.
+        var agreement = Enum.GetValues<RelevanceVerdict>().Select(verdict =>
+        {
+            var decided = records.Where(r => r.Outcome is { } o && InPeriod(o.At) && Verdict(r) == verdict).ToList();
+            return new VerdictAgreement(verdict, decided.Count(r => r.Outcome!.Kind == OutcomeKind.Digested), decided.Count(r => r.Outcome!.Kind == OutcomeKind.Dismissed));
+        }).ToList();
+
+        return new MetricsResponse(from, to, sources, dailyMetrics, failures.Take(MaxFailures).ToList(),
+            new AiMetrics(model?.IsConfigured ?? false, agreement));
     }
 
-    private const string Received = "received", Parsed = "parsed", Failed = "failed", Digested = "digested", Dismissed = "dismissed";
+    private const string Received = "received", Parsed = "parsed", Failed = "failed", Digested = "digested", Dismissed = "dismissed",
+        AssessedRelevant = "relevant", AssessedUncertain = "uncertain", AssessedNotRelevant = "notRelevant", Drafted = "drafted";
+
+    private static RelevanceVerdict? Verdict(LedgerRecord record) =>
+        record.Stages.TryGetValue(Stage.Relevance, out var stage) && stage.Status == StageStatus.Succeeded
+            && Enum.TryParse<RelevanceVerdict>(stage.Answer, out var verdict) ? verdict : null;
 
     private static IEnumerable<(DateTimeOffset At, string Kind)> Events(LedgerRecord record)
     {
@@ -87,6 +106,19 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock)
         if (record.Outcome is { } outcome)
         {
             yield return (outcome.At, outcome.Kind == OutcomeKind.Digested ? Digested : Dismissed);
+        }
+        if (Verdict(record) is { } verdict)
+        {
+            yield return (record.Stages[Stage.Relevance].At, verdict switch
+            {
+                RelevanceVerdict.Relevant => AssessedRelevant,
+                RelevanceVerdict.Uncertain => AssessedUncertain,
+                _ => AssessedNotRelevant,
+            });
+        }
+        if (record.Stages.TryGetValue(Stage.Extracted, out var extracted) && extracted.Answer == Extraction.ExtractionAnswers.Draft)
+        {
+            yield return (extracted.At, Drafted);
         }
     }
 

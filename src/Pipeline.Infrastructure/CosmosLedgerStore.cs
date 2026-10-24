@@ -176,6 +176,7 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
         {
             RelevanceFilter.NotRelevant => $" AND {answer} = '{RelevanceVerdict.NotRelevant}'",
             RelevanceFilter.Other => $" AND (NOT IS_DEFINED({answer}) OR IS_NULL({answer}) OR {answer} != '{RelevanceVerdict.NotRelevant}')",
+            RelevanceFilter.NotAssessed => $" AND (NOT IS_DEFINED(c.stages.{Stage.Relevance}) OR c.stages.{Stage.Relevance}.status = '{StageStatus.Failed}')",
             _ => "",
         });
         var draft = $"c.stages.{Stage.Extracted}.answer";

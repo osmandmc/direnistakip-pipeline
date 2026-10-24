@@ -74,6 +74,41 @@ public class ArticleMetricsTests
         Assert.Equal(7 * 2, result.Days.Count);
     }
 
+    private void Judge(string id, string verdict, DateTimeOffset at, bool drafted = false)
+    {
+        var record = _ledger.Records[id];
+        var stages = new Dictionary<Stage, StageResult>(record.Stages)
+        {
+            [Stage.Relevance] = new(StageStatus.Succeeded, at.ToUniversalTime(), "relevance-v1", "…", verdict),
+        };
+        if (drafted) stages[Stage.Extracted] = new(StageStatus.Succeeded, at.ToUniversalTime(), "prompt-v2", "…", "Draft");
+        _ledger.Records[id] = record with { Stages = stages };
+    }
+
+    [Fact]
+    public async Task TheAisWorkIsCountedAndComparedWithTheResearchersDecisions()
+    {
+        Add("drafted", "evrensel", Oct(20, 8), parsed: Oct(20, 8));
+        Judge("drafted", "Relevant", Oct(20, 8), drafted: true);
+        Add("rejected", "evrensel", Oct(20, 8), parsed: Oct(20, 8));
+        Judge("rejected", "NotRelevant", Oct(20, 8));
+        Add("unassessed", "evrensel", Oct(20, 8), parsed: Oct(20, 8));
+        Add("missed", "evrensel", Oct(19, 8), parsed: Oct(19, 8), outcome: new ArticleOutcome(OutcomeKind.Digested, Oct(19, 12), 7));
+        Judge("missed", "NotRelevant", Oct(19, 9));
+        Add("agreed", "evrensel", Oct(19, 8), parsed: Oct(19, 8), outcome: new ArticleOutcome(OutcomeKind.Dismissed, Oct(19, 12)));
+        Judge("agreed", "NotRelevant", Oct(19, 9));
+
+        var result = await new ArticleMetrics(_ledger, new FixedClock(Now), new Relevance.ScriptedModel(_ => throw new InvalidOperationException())).GetAsync(3);
+
+        var evrensel = result.Sources.Single(s => s.SourceId == "evrensel");
+        Assert.Equal((3, 1, 1, 1), (evrensel.Open, evrensel.OpenWithDraft, evrensel.OpenNotRelevant, evrensel.OpenNotAssessed));
+        var today = result.Days.Single(d => d.SourceId == "evrensel" && d.Day.Day == 20);
+        Assert.Equal((1, 0, 1, 1), (today.AssessedRelevant, today.AssessedUncertain, today.AssessedNotRelevant, today.Drafted));
+        Assert.True(result.Ai!.Enabled);
+        Assert.Equal(new VerdictAgreement(RelevanceVerdict.NotRelevant, 1, 1), result.Ai.Agreement.Single(a => a.Verdict == RelevanceVerdict.NotRelevant));
+        Assert.False((await _metrics.GetAsync(3)).Ai!.Enabled); // no model: the AI is off
+    }
+
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now.ToUniversalTime();
