@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      # The relevance prompt is built into the code (Pipeline.Core embeds it).
+      - 'docs/extraction/relevance-prompt.md'
       - 'prompts/**'
       - 'schema/**'
       - 'Directory.*.props'
