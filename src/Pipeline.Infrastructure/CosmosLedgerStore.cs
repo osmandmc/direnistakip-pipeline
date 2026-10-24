@@ -169,6 +169,14 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
             OutcomeFilter.Handled => " AND IS_DEFINED(c.outcome) AND NOT IS_NULL(c.outcome)",
             _ => "",
         });
+        // An article without a Relevance answer (not assessed, skipped, failed) counts as "other".
+        var answer = $"c.stages.{Stage.Relevance}.answer";
+        sql.Append(query.Relevance switch
+        {
+            RelevanceFilter.NotRelevant => $" AND {answer} = '{RelevanceVerdict.NotRelevant}'",
+            RelevanceFilter.Other => $" AND (NOT IS_DEFINED({answer}) OR IS_NULL({answer}) OR {answer} != '{RelevanceVerdict.NotRelevant}')",
+            _ => "",
+        });
         if (query.TitleContains is { } text)
         {
             // Records titled before searchTitle existed: case-insensitive match on the title itself.

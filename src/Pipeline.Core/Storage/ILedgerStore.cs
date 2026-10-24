@@ -51,6 +51,18 @@ public enum OutcomeFilter
     Any,
 }
 
+/// <summary>The Relevance stage's verdict (B10): the inbox shows the AI's rejections apart, never hidden.</summary>
+public enum RelevanceFilter
+{
+    Any,
+
+    /// <summary>Judged not relevant.</summary>
+    NotRelevant,
+
+    /// <summary>Everything else: relevant, uncertain, not assessed (yet), or the assessment failed.</summary>
+    Other,
+}
+
 /// <param name="From">Inclusive, compared with the list date.</param>
 /// <param name="Before">Exclusive.</param>
 /// <param name="TitleContains">Text the title must contain, compared in folded form (<see cref="Articles.TitleSearch"/>).</param>
@@ -60,7 +72,8 @@ public sealed record LedgerQuery(
     DateTimeOffset? Before = null,
     ArticleStatusFilter Status = ArticleStatusFilter.Parsed,
     OutcomeFilter Outcome = OutcomeFilter.Open,
-    string? TitleContains = null);
+    string? TitleContains = null,
+    RelevanceFilter Relevance = RelevanceFilter.Any);
 
 /// <summary>A page of records; <see cref="Next"/> is an opaque token for the following page, or null.</summary>
 public sealed record LedgerPage(IReadOnlyList<LedgerRecord> Items, string? Next);

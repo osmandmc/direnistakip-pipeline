@@ -181,4 +181,28 @@ public class LedgerQueryTests(EmulatorFixture emulators)
         Assert.Contains(records, r => r.Id == id);
         Assert.DoesNotContain(await _store.ChangedSinceAsync(DateTimeOffset.UtcNow.AddHours(1)), r => r.Id == id);
     }
+
+    [Fact]
+    public async Task TheAisRejectionsAreListedApartFromEverythingElse()
+    {
+        var relevant = await Parsed(Oct(20));
+        var rejected = await Parsed(Oct(19));
+        var uncertain = await Parsed(Oct(18));
+        var failed = await Parsed(Oct(17));
+        var notAssessed = await Parsed(Oct(16));
+        await _store.RecordStageAsync(relevant, Stage.Relevance, new(StageStatus.Succeeded, DateTimeOffset.UtcNow, "relevance-v1", "Grev.", "Relevant"));
+        await _store.RecordStageAsync(rejected, Stage.Relevance, new(StageStatus.Succeeded, DateTimeOffset.UtcNow, "relevance-v1", "Spor haberi.", "NotRelevant"));
+        await _store.RecordStageAsync(uncertain, Stage.Relevance, new(StageStatus.Succeeded, DateTimeOffset.UtcNow, "relevance-v1", "Belirsiz.", "Uncertain"));
+        await _store.RecordStageAsync(failed, Stage.Relevance, new(StageStatus.Failed, DateTimeOffset.UtcNow, "relevance-v1", "No JSON"));
+
+        var notRelevant = await AllIds(new LedgerQuery(_source, Relevance: RelevanceFilter.NotRelevant));
+        var other = await AllIds(new LedgerQuery(_source, Relevance: RelevanceFilter.Other));
+        var any = await AllIds(new LedgerQuery(_source));
+
+        Assert.Equal([rejected], notRelevant);
+        Assert.Equal([relevant, uncertain, failed, notAssessed], other);
+        Assert.Equal(5, any.Count);
+        Assert.Equal(1, await _store.CountAsync(new LedgerQuery(_source, Relevance: RelevanceFilter.NotRelevant)));
+    }
 }
+
