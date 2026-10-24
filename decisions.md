@@ -92,6 +92,7 @@ Diagrams, roadmap and cost options: [architecture.md](architecture.md).
 ## D-007 — Relevance is a separate stage before extraction
 **Decision.** Relevance (relevant / not relevant / uncertain + reason) sits between parsing and extraction, stored separately. Extraction may return zero events. Until the collector exists, relevance can stay a human step.
 **Consequences.** Measured and tuned independently; favour recall.
+**Update (B9, 2026-10-24).** Built ahead of phase 4 because the feeds bring many unrelated articles. Three verdicts with a reason; "uncertain" is shown with the relevant ones. Only the start of the text is sent (cheap: about 1,000 tokens per article). Not applied to links researchers pasted. Nothing is hidden: the app orders the inbox by the verdict (app R21).
 
 ## D-008 — Validation: deterministic checks first, no raw confidence numbers
 **Decision.** (1) Deterministic checks (schema, enums, quote found, date plausibility, canonical lists); (2) optional LLM judge that only raises flags; (3) numeric confidence only once calibrated. Show reasons, not percentages.
@@ -207,7 +208,7 @@ Environments: `prod` only to start; add `dev` when changes need a safe place to 
 4. **New-resistance rule:** when a protest starts a new resistance.
 5. **Multi-event articles:** one article → several cases? Affects `ArticleReview` key and draft shape.
 6. **Metrics store:** Cosmos rollups or relational.
-7. **LLM provider, model and monthly cap** (see cost options in architecture.md).
+7. **LLM provider, model and monthly cap** (see cost options in architecture.md). **For testing (2026-10-24):** Gemini Flash-Lite on the free tier (the full Flash was often busy there), behind `ILanguageModel` so the provider is a configuration choice. On the free tier Google may use the texts sent; the decision for production waits for the research group.
 8. **Source terms:** robots.txt, terms of use, attribution. Before the first scheduled fetch. robots.txt checked in T4: general crawling allowed on all four; **Evrensel signals `ai-input=no`**, which affects LLM extraction (see `docs/spikes/t4-fetch-spike.md`).
 9. **Privacy:** fields never stored (e.g. rank-and-file names). Before the first scheduled fetch; immutable records make deletion costly.
 10. **Operations:** runbook and IaC in the repo.

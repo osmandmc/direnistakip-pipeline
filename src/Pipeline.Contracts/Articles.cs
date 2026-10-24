@@ -35,3 +35,10 @@ public sealed record ArticleDetail(
 /// handles; call again (articles that parsed now no longer match "failed").
 /// </summary>
 public sealed record ReparseResponse(int Examined, int Parsed, int StillFailed, int NoStoredPage, bool More);
+
+/// <summary>
+/// <c>POST /articles/assess</c> (B9): open articles queued for the Relevance stage, spaced <c>SpacingSeconds</c> apart.
+/// More: there were more than one call queues; call again once these are done (about <c>Queued × SpacingSeconds</c>).
+/// ModelConfigured false: no key, nothing queued.
+/// </summary>
+public sealed record AssessResponse(int Queued, int SpacingSeconds, bool More, bool ModelConfigured);

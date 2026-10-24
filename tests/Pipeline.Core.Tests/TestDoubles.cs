@@ -118,10 +118,17 @@ internal sealed class InMemoryRawHtml : IRawHtmlStore
 internal sealed class RecordingQueue : IQueueSender
 {
     public List<(string Queue, object? Message)> Sent { get; } = [];
+    public List<(string Queue, object? Message, TimeSpan Delay)> SentLater { get; } = [];
 
     public Task SendAsync<T>(string queueName, T message, CancellationToken ct = default)
     {
         Sent.Add((queueName, message));
+        return Task.CompletedTask;
+    }
+
+    public Task SendLaterAsync<T>(string queueName, T message, TimeSpan delay, CancellationToken ct = default)
+    {
+        SentLater.Add((queueName, message, delay));
         return Task.CompletedTask;
     }
 }
