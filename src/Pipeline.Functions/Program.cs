@@ -6,7 +6,9 @@ using Pipeline.Core.Articles;
 using Pipeline.Core.Collecting;
 using Pipeline.Core.Fetching;
 using Pipeline.Core.Parsing;
+using Pipeline.Core.Extraction;
 using Pipeline.Core.Relevance;
+using Pipeline.Core.Storage;
 using Pipeline.Core.Submission;
 using Pipeline.Functions.Http;
 using Pipeline.Infrastructure;
@@ -35,16 +37,30 @@ builder.Services.AddSingleton<IArticleParser, EvrenselParser>();
 builder.Services.AddSingleton<ArticleParsing>();
 builder.Services.AddSingleton<ArticleReparsing>();
 
-// Relevance stage (B9): Gemini while testing (the provider is open decision #7). No key → the stage does nothing.
-var gemini = new GeminiOptions { ApiKey = builder.Configuration["Gemini:ApiKey"] };
-if (builder.Configuration["Gemini:Model"] is { Length: > 0 } geminiModel)
+// Relevance (B9) and Extract (B12) stages: Gemini while testing (the provider is open decision #7), one key, a model
+// setting each. Both Flash-Lite by default: on the free tier the full Flash allows only 20 requests a day, Flash-Lite
+// 500, enough for both stages. No key → both stages do nothing.
+GeminiOptions Gemini(string modelSetting, string fallback) => new()
 {
-    gemini.Model = geminiModel;
-}
-builder.Services.AddSingleton(gemini);
-builder.Services.AddHttpClient<ILanguageModel, GeminiModel>(http => http.Timeout = TimeSpan.FromSeconds(120));
-builder.Services.AddTransient<RelevanceAssessment>();
-builder.Services.AddTransient<ArticleAssessing>();
+    ApiKey = builder.Configuration["Gemini:ApiKey"],
+    Model = builder.Configuration[modelSetting] is { Length: > 0 } model ? model : fallback,
+};
+var relevanceModel = Gemini("Gemini:Model", new GeminiOptions().Model);
+var extractionModel = Gemini("Gemini:ExtractionModel", new GeminiOptions().Model);
+builder.Services.AddHttpClient("gemini", http => http.Timeout = TimeSpan.FromSeconds(120));
+GeminiModel Model(IServiceProvider sp, GeminiOptions options) =>
+    new(sp.GetRequiredService<IHttpClientFactory>().CreateClient("gemini"), options);
+
+builder.Services.AddTransient(sp => new RelevanceAssessment(
+    sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), sp.GetRequiredService<IRelevanceStore>(),
+    Model(sp, relevanceModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddTransient(sp => new ArticleAssessing(
+    sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), Model(sp, relevanceModel), sp.GetRequiredService<IQueueSender>()));
+builder.Services.AddTransient(sp => new DraftExtraction(
+    sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), sp.GetRequiredService<IDraftStore>(),
+    Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddTransient(sp => new ArticleDrafting(
+    sp.GetRequiredService<ILedgerStore>(), Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>()));
 
 // Read API (D-009).
 builder.Services.AddSingleton<ArticleQueries>();

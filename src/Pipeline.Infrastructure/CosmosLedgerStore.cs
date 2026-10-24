@@ -4,6 +4,7 @@ using Microsoft.Azure.Cosmos;
 using Pipeline.Contracts;
 using Pipeline.Core;
 using Pipeline.Core.Articles;
+using Pipeline.Core.Extraction;
 using Pipeline.Core.Storage;
 
 namespace Pipeline.Infrastructure;
@@ -175,6 +176,13 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
         {
             RelevanceFilter.NotRelevant => $" AND {answer} = '{RelevanceVerdict.NotRelevant}'",
             RelevanceFilter.Other => $" AND (NOT IS_DEFINED({answer}) OR IS_NULL({answer}) OR {answer} != '{RelevanceVerdict.NotRelevant}')",
+            _ => "",
+        });
+        var draft = $"c.stages.{Stage.Extracted}.answer";
+        sql.Append(query.Draft switch
+        {
+            DraftFilter.Ready => $" AND {draft} = '{ExtractionAnswers.Draft}'",
+            DraftFilter.None => $" AND (NOT IS_DEFINED({draft}) OR IS_NULL({draft}) OR {draft} != '{ExtractionAnswers.Draft}')",
             _ => "",
         });
         if (query.TitleContains is { } text)

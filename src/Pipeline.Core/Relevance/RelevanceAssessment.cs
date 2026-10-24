@@ -24,8 +24,8 @@ public enum AssessOutcome
 /// <summary>
 /// The Relevance stage (D-007, B9): asks the model whether a parsed article tells of a labour action, saves the answer
 /// as its own record and puts the verdict and reason in the ledger, where the app reads them. Articles researchers
-/// pasted are skipped; without a model key nothing happens, so articles flow as before. Relevant articles are not
-/// passed on yet: there is no Extract stage to take them (article-relevant stays unused until then).
+/// pasted are skipped; without a model key nothing happens, so articles flow as before. Relevant and uncertain articles
+/// go on to the Extract stage (article-relevant, B12).
 /// </summary>
 public sealed class RelevanceAssessment(
     ILedgerStore ledger,
@@ -112,6 +112,10 @@ public sealed class RelevanceAssessment(
         var now = clock.GetUtcNow();
         await relevance.SaveAsync(new RelevanceRecord(Guid.NewGuid().ToString("N"), record.Id, article.Id, verdict, reason, version, now), ct);
         await ledger.RecordStageAsync(record.Id, Stage.Relevance, new StageResult(StageStatus.Succeeded, now, version, reason, verdict.ToString()), ct);
+        if (verdict != RelevanceVerdict.NotRelevant)
+        {
+            await queue.SendAsync(QueueNames.ArticleRelevant, new ArticleRelevant(record.Id, record.SourceId, verdict, now), ct);
+        }
         return (AssessOutcome.Assessed, default);
     }
 

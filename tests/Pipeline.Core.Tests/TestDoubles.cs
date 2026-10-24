@@ -66,6 +66,8 @@ internal sealed class InMemoryLedger : ILedgerStore
             })
             .Where(r => query.Relevance == RelevanceFilter.Any
                 || (query.Relevance == RelevanceFilter.NotRelevant) == (r.Stages.TryGetValue(Stage.Relevance, out var rel) && rel.Answer == nameof(RelevanceVerdict.NotRelevant)))
+            .Where(r => query.Draft == DraftFilter.Any
+                || (query.Draft == DraftFilter.Ready) == (r.Stages.TryGetValue(Stage.Extracted, out var ex) && ex.Answer == Pipeline.Core.Extraction.ExtractionAnswers.Draft))
             .Where(r => query.TitleContains is null
                 || (r.Title is not null && TitleSearch.Fold(r.Title).Contains(TitleSearch.Fold(query.TitleContains), StringComparison.Ordinal)))
             .OrderByDescending(r => r.ListDate)

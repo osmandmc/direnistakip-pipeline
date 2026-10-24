@@ -1,7 +1,10 @@
 // Runs the relevance prompt (docs/extraction/relevance-prompt.md) over labelled articles and writes one line per answer.
 //
 //   dotnet user-secrets set Gemini:ApiKey <key> --project tools/RelevanceEval     (once; or the Gemini__ApiKey variable)
-//   dotnet run --project tools/RelevanceEval -- <articles.jsonl> <answers.jsonl> [model]
+//   dotnet run --project tools/RelevanceEval -- <articles.jsonl> <answers.jsonl> [model] [--extract]
+//
+// With --extract it runs the extraction prompt (docs/extraction/prompt.md, B12) instead and writes the model's JSON as
+// "draft" (score it with the scoring script of the extraction evaluation).
 //
 // Input lines: { "id", "label", "source", "date", "title", "text" } (label: what the researchers decided). Output lines:
 // { "id", "label", "verdict", "reason", "model" } or { "id", "error" }. Ids already answered are skipped, so a run can be
@@ -24,9 +27,11 @@ if (config["Gemini:Model"] is { Length: > 0 } configured)
 {
     options.Model = configured;
 }
-if (args.Length > 2)
+var extract = args.Contains("--extract");
+var positional = args.Where(a => !a.StartsWith("--")).ToArray();
+if (positional.Length > 2)
 {
-    options.Model = args[2];
+    options.Model = positional[2];
 }
 if (!options.HasKey)
 {
@@ -36,15 +41,15 @@ if (!options.HasKey)
 
 var model = new GeminiModel(new HttpClient { Timeout = TimeSpan.FromSeconds(120) }, options);
 var json = new JsonSerializerOptions(JsonSerializerDefaults.Web) { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-var done = File.Exists(args[1])
-    ? File.ReadLines(args[1]).Select(l => JsonDocument.Parse(l).RootElement)
+var done = File.Exists(positional[1])
+    ? File.ReadLines(positional[1]).Select(l => JsonDocument.Parse(l).RootElement)
         .Where(r => !r.TryGetProperty("error", out _)).Select(r => r.GetProperty("id").GetString()).ToHashSet()
     : [];
 var spacing = TimeSpan.FromSeconds(7); // ≈ 8 a minute, under the free tier's limit
 
-using var output = new StreamWriter(args[1], append: true);
+using var output = new StreamWriter(positional[1], append: true);
 var count = 0;
-foreach (var line in File.ReadLines(args[0]))
+foreach (var line in File.ReadLines(positional[0]))
 {
     var article = JsonDocument.Parse(line).RootElement;
     var id = article.GetProperty("id").GetString()!;
@@ -53,8 +58,11 @@ foreach (var line in File.ReadLines(args[0]))
         continue;
     }
     DateTimeOffset? date = DateTimeOffset.TryParse(article.GetProperty("date").GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
-    var prompt = RelevancePrompt.Build(
-        Name(article.GetProperty("source").GetString()!), date, article.GetProperty("title").GetString(), article.GetProperty("text").GetString() ?? "");
+    var prompt = extract
+        ? Pipeline.Core.Extraction.ExtractionPrompt.Build(new Pipeline.Contracts.ParsedArticle(id, id, article.GetProperty("source").GetString()!, "eval",
+            DateTimeOffset.UtcNow, null, article.GetProperty("title").GetString(), date, article.GetProperty("text").GetString() ?? ""))
+        : RelevancePrompt.Build(
+            Name(article.GetProperty("source").GetString()!), date, article.GetProperty("title").GetString(), article.GetProperty("text").GetString() ?? "");
 
     object result;
     for (var attempt = 1; ; attempt++)
@@ -62,8 +70,16 @@ foreach (var line in File.ReadLines(args[0]))
         try
         {
             var answer = await model.AnswerJsonAsync(prompt);
-            var (verdict, reason) = RelevancePrompt.ReadAnswer(answer.Text);
-            result = new { id, label = article.GetProperty("label").GetString(), verdict, reason, model = answer.Model };
+            if (extract)
+            {
+                var (draftJson, relevant, summary) = Pipeline.Core.Extraction.ExtractionPrompt.ReadAnswer(answer.Text);
+                result = new { id, label = article.GetProperty("label").GetString(), relevant, summary, draft = JsonDocument.Parse(draftJson).RootElement, model = answer.Model };
+            }
+            else
+            {
+                var (verdict, reason) = RelevancePrompt.ReadAnswer(answer.Text);
+                result = new { id, label = article.GetProperty("label").GetString(), verdict, reason, model = answer.Model };
+            }
             break;
         }
         catch (ModelRateLimitedException e) when (attempt < 5)
@@ -88,7 +104,7 @@ foreach (var line in File.ReadLines(args[0]))
     Console.WriteLine($"{++count,3} {id}: {JsonSerializer.Serialize(result, json)}");
     await Task.Delay(spacing);
 }
-Console.WriteLine($"Done: {count} new answers in {args[1]}.");
+Console.WriteLine($"Done: {count} new answers in {positional[1]}.");
 return 0;
 
 static string Name(string sourceId) =>

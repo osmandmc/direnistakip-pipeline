@@ -208,7 +208,7 @@ Environments: `prod` only to start; add `dev` when changes need a safe place to 
 4. **New-resistance rule:** when a protest starts a new resistance.
 5. **Multi-event articles:** one article → several cases? Affects `ArticleReview` key and draft shape.
 6. **Metrics store:** Cosmos rollups or relational.
-7. **LLM provider, model and monthly cap** (see cost options in architecture.md). **For testing (2026-10-24):** Gemini Flash-Lite on the free tier (the full Flash was often busy there), behind `ILanguageModel` so the provider is a configuration choice. On the free tier Google may use the texts sent; the decision for production waits for the research group.
+7. **LLM provider, model and monthly cap** (see cost options in architecture.md). **For testing (2026-10-24):** Gemini Flash-Lite on the free tier (the full Flash was often busy there), behind `ILanguageModel` so the provider is a configuration choice. On the free tier Google may use the texts sent; the decision for production waits for the research group. **Drafts (B12):** Gemini Flash-Lite as well (the full Flash allows 20 free requests a day); both stages share the key's 500 a day; a second key in its own Google project for local tests, so they never use up the pipeline's limit.
 8. **Source terms:** robots.txt, terms of use, attribution. Before the first scheduled fetch. robots.txt checked in T4: general crawling allowed on all four; **Evrensel signals `ai-input=no`**, which affects LLM extraction (see `docs/spikes/t4-fetch-spike.md`).
 9. **Privacy:** fields never stored (e.g. rank-and-file names). Before the first scheduled fetch; immutable records make deletion costly.
 10. **Operations:** runbook and IaC in the repo.

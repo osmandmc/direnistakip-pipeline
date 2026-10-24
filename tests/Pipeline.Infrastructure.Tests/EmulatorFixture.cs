@@ -44,6 +44,7 @@ public sealed class EmulatorFixture : IAsyncLifetime
         await Database.CreateContainerIfNotExistsAsync(StorageNames.LedgerContainer, "/id");
         await Database.CreateContainerIfNotExistsAsync(StorageNames.ParsedContainer, "/articleId");
         await Database.CreateContainerIfNotExistsAsync(StorageNames.RelevanceContainer, "/articleId");
+        await Database.CreateContainerIfNotExistsAsync(StorageNames.DraftsContainer, "/articleId");
 
         var storage = _azurite.GetConnectionString();
         RawHtml = new BlobServiceClient(storage).GetBlobContainerClient(StorageNames.RawHtmlBlobContainer);
