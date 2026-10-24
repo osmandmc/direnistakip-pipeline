@@ -61,6 +61,9 @@ public enum RelevanceFilter
 
     /// <summary>Everything else: relevant, uncertain, not assessed (yet), or the assessment failed.</summary>
     Other,
+
+    /// <summary>Not assessed yet, or the assessment failed (skipped ones, pasted links, do not count).</summary>
+    NotAssessed,
 }
 
 /// <summary>Whether the Extract stage left a draft (B12): the inbox's "Taslak hazır" tab.</summary>

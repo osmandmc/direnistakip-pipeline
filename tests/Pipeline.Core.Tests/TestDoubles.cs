@@ -64,8 +64,12 @@ internal sealed class InMemoryLedger : ILedgerStore
                 OutcomeFilter.Handled => r.Outcome is not null,
                 _ => true,
             })
-            .Where(r => query.Relevance == RelevanceFilter.Any
-                || (query.Relevance == RelevanceFilter.NotRelevant) == (r.Stages.TryGetValue(Stage.Relevance, out var rel) && rel.Answer == nameof(RelevanceVerdict.NotRelevant)))
+            .Where(r => query.Relevance switch
+            {
+                RelevanceFilter.Any => true,
+                RelevanceFilter.NotAssessed => !r.Stages.TryGetValue(Stage.Relevance, out var s) || s.Status == StageStatus.Failed,
+                var filter => (filter == RelevanceFilter.NotRelevant) == (r.Stages.TryGetValue(Stage.Relevance, out var rel) && rel.Answer == nameof(RelevanceVerdict.NotRelevant)),
+            })
             .Where(r => query.Draft == DraftFilter.Any
                 || (query.Draft == DraftFilter.Ready) == (r.Stages.TryGetValue(Stage.Extracted, out var ex) && ex.Answer == Pipeline.Core.Extraction.ExtractionAnswers.Draft))
             .Where(r => query.TitleContains is null
