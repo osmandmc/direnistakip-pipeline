@@ -16,12 +16,32 @@ Collects labour news articles and pre-fills case drafts for review in the direni
 
 ## Local development
 
+Runs the whole pipeline on your machine against emulators: nothing touches Azure (F11).
+
+**Once:** Docker Desktop, the .NET 9 SDK and Azure Functions Core Tools v4
+(`brew tap azure/functions && brew install azure-functions-core-tools@4`), then
+
 ```sh
-dotnet build
-dotnet test
 cp src/Pipeline.Functions/local.settings.example.json src/Pipeline.Functions/local.settings.json
-# Run with Azure Functions Core Tools + Azurite:  cd src/Pipeline.Functions && func start
 ```
+
+Optional: put a **test** Gemini key (its own Google project, so it never uses up the pipeline's daily limit) in
+`Gemini__ApiKey` in that file; without one the AI stages do nothing. `local.settings.json` is not committed.
+
+**Each time:**
+
+```sh
+docker compose up -d                       # Azurite (blob, queue, table) and the Cosmos DB emulator
+cd src/Pipeline.Functions && func start    # the functions on http://localhost:7071
+```
+
+At startup the database, containers, queues and the blob container are created in the emulators. No function key is
+needed locally. To bring articles in: `curl -X POST "http://localhost:7071/api/collect?source=evrensel"` (the feed timer
+stays off locally: `FeedCollection__Enabled` is false), or paste links in the app run locally against this pipeline.
+Cosmos data can be browsed at http://localhost:1234; it is lost when the emulator stops. `docker compose down` stops
+both.
+
+**Tests:** `dotnet test` (the storage tests start their own emulators in Docker).
 
 ## One-time Azure setup
 

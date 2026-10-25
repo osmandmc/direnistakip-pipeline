@@ -1,0 +1,23 @@
+# Local emulators for running the pipeline on your machine (F11): see "Local development" in README.md.
+#   docker compose up -d      start (data in Azurite survives restarts; the Cosmos emulator starts empty each time)
+#   docker compose down       stop
+services:
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.33.0
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck --loose
+    ports:
+      - "10000:10000" # blob
+      - "10001:10001" # queue
+      - "10002:10002" # table (the Functions host keeps timer state there)
+    volumes:
+      - azurite-data:/data
+
+  cosmos:
+    # The same image the storage tests use; runs natively on Apple silicon.
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    ports:
+      - "8081:8081"   # API (http)
+      - "1234:1234"   # Data Explorer in the browser: http://localhost:1234
+
+volumes:
+  azurite-data:
