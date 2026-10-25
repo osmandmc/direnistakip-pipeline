@@ -68,4 +68,13 @@ builder.Services.AddTransient(sp => new ArticleDrafting(
 builder.Services.AddSingleton<ArticleQueries>();
 builder.Services.AddSingleton<ArticleOutcomes>();
 
-builder.Build().Run();
+var app = builder.Build();
+
+// Running locally (func start sets the Development environment): create what infra/main.bicep creates in Azure, in the
+// emulators of docker-compose.yml (F11).
+if (builder.Environment.IsDevelopment())
+{
+    await LocalResources.EnsureAsync(app.Services, builder.Configuration);
+}
+
+app.Run();
