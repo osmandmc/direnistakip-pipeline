@@ -136,3 +136,29 @@ noise, and the mix (51 to 20) is the reverse of the feed's. The prompt's exclusi
 been scored, so the result is somewhat optimistic. The real measure is the inbox: verdicts against researchers' decisions
 and dismiss reasons (app R19c) over the first weeks.
 
+## Relevance prompt v3.1 (2026-10-25)
+
+Feedback from the first days in use: articles about a protest abroad, a politician's post about a protest, and a
+worker's letter were judged relevant. The scope was confirmed at the same time: protests by workers or their
+organisations (unions, professional chambers, labour platforms) in Turkey, on any topic (press freedom, earthquake,
+climate, peace … as the reasons list has); borderline cases go to "uncertain" for the researchers.
+
+`relevance-v3.1` (the third draft; v2 and v3 were only measured) spells out three conditions (labour actors, a concrete
+action in Turkey, the article tells of it), lists what is clearly not relevant, and keeps "uncertain" for articles that
+mention an action but leave something unclear; an article with no action at all is "not relevant". Measured with
+Gemini Flash-Lite on a separate test key:
+
+| Set | v1 | v3.1 |
+|---|---|---|
+| Linked to a case (51 evaluation articles; v3.1 on all in v3, on 22 again after the last change) | 51 relevant | 51 relevant |
+| Dismissed (20 evaluation articles) | 15 not relevant, 2 uncertain, 3 relevant | 17 not relevant, 1 uncertain, 2 relevant |
+| Today's feed (150 articles): protests abroad (7) | 6 relevant | all not relevant |
+| Letters and no-action stories in the feed and the dismissed set | often relevant or uncertain | not relevant |
+| Rights protests by non-labour groups (prisoners, a human rights association) | not relevant | uncertain |
+
+The two dismissed articles still judged relevant are the labour actions researchers dismissed for other reasons (May
+Day arrests, the Borusan tent). Known weak spots, left to "uncertain" and the researchers rather than tuned further
+(attempts made them waver): an article about a politician's post on a protest, and a union's press statement made at its
+own building. v2 had been too strict (it rejected union press statements and lost a real case) and v3 too loose (no-action
+stories became "uncertain"). Articles assessed before keep their v1 verdict.
+

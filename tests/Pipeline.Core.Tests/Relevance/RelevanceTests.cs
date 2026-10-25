@@ -42,13 +42,14 @@ public class RelevancePromptTests
         Assert.Contains("Kaynak: Evrensel · Tarih: 2026-10-24 · Başlık: Başlık", prompt); // Turkey time
         Assert.Contains("işçiler […]", prompt);
         Assert.DoesNotContain("{{", prompt);
-        Assert.True(prompt.Length < 2000 + RelevancePrompt.TextLength);
+        Assert.True(prompt.Length < 4000 + RelevancePrompt.TextLength); // instructions plus the start of the text, never the whole text
     }
 
     [Theory]
     [InlineData("""{"verdict": "relevant", "reason": "Grev var."}""", RelevanceVerdict.Relevant, "Grev var.")]
     [InlineData("```json\n{ \"verdict\": \"not_relevant\", \"reason\": \" Analiz yazısı. \" }\n```", RelevanceVerdict.NotRelevant, "Analiz yazısı.")]
     [InlineData("""{"verdict": "Uncertain"}""", RelevanceVerdict.Uncertain, null)]
+    [InlineData("""{"verdict": "irrelevant", "reason": "Dış haber."}""", RelevanceVerdict.NotRelevant, "Dış haber.")]
     public void TheAnswerIsRead(string answer, RelevanceVerdict verdict, string? reason) =>
         Assert.Equal((verdict, reason), RelevancePrompt.ReadAnswer(answer));
 
@@ -160,10 +161,10 @@ public class RelevanceAssessmentTests
         Assert.Equal(AssessOutcome.Assessed, outcome);
         Assert.Contains("İşçiler iş bıraktı", Assert.Single(model.Prompts));
         var saved = Assert.Single(_relevance.Saved);
-        Assert.Equal(("a", "p-a", RelevanceVerdict.NotRelevant, "Analiz yazısı.", "relevance-v1 · gemini-3-flash"),
+        Assert.Equal(("a", "p-a", RelevanceVerdict.NotRelevant, "Analiz yazısı.", $"{RelevancePrompt.Version} · gemini-3-flash"),
             (saved.ArticleId, saved.ParsedId, saved.Verdict, saved.Reason, saved.Version));
         var stage = _ledger.Records["a"].Stages[Stage.Relevance];
-        Assert.Equal((StageStatus.Succeeded, "NotRelevant", "Analiz yazısı.", "relevance-v1 · gemini-3-flash"), (stage.Status, stage.Answer, stage.Reason, stage.Version));
+        Assert.Equal((StageStatus.Succeeded, "NotRelevant", "Analiz yazısı.", $"{RelevancePrompt.Version} · gemini-3-flash"), (stage.Status, stage.Answer, stage.Reason, stage.Version));
         Assert.Empty(_queue.Sent);
     }
 

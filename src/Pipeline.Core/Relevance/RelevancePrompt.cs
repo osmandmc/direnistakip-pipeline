@@ -12,7 +12,7 @@ namespace Pipeline.Core.Relevance;
 public static class RelevancePrompt
 {
     /// <summary>Change it with every change to the prompt file, so records say which prompt judged them.</summary>
-    public const string Version = "relevance-v1";
+    public const string Version = "relevance-v3.1";
 
     /// <summary>Characters of the body sent to the model.</summary>
     public const int TextLength = 1500;
@@ -65,7 +65,7 @@ public static class RelevancePrompt
             return (verdict?.Trim().ToLowerInvariant() switch
             {
                 "relevant" => RelevanceVerdict.Relevant,
-                "not_relevant" or "notrelevant" or "not relevant" => RelevanceVerdict.NotRelevant,
+                "not_relevant" or "notrelevant" or "not relevant" or "not-relevant" or "irrelevant" => RelevanceVerdict.NotRelevant,
                 "uncertain" => RelevanceVerdict.Uncertain,
                 _ => throw new FormatException($"Unknown verdict '{verdict}'."),
             }, string.IsNullOrEmpty(reason) ? null : reason);
