@@ -17,21 +17,26 @@ public sealed class ArticleAssessing(ILedgerStore ledger, IParsedStore parsed, I
 
     private const int PageSize = 100;
 
-    public async Task<AssessResponse> RunAsync(string sourceId, CancellationToken ct = default)
+    /// <param name="again">
+    /// Instead of articles without a verdict: articles judged by an older version of the relevance prompt, judged again
+    /// with the current one (B13).
+    /// </param>
+    public async Task<AssessResponse> RunAsync(string sourceId, bool again = false, CancellationToken ct = default)
     {
         if (!model.IsConfigured)
         {
             return new AssessResponse(0, (int)Spacing.TotalSeconds, false, false);
         }
 
-        var query = new LedgerQuery(sourceId, Status: ArticleStatusFilter.Parsed, Outcome: OutcomeFilter.Open);
+        var query = new LedgerQuery(sourceId, Status: ArticleStatusFilter.Parsed, Outcome: OutcomeFilter.Open,
+            RelevanceOlderThan: again ? RelevancePrompt.Version : null);
         var queued = 0;
         var more = false;
         string? next = null;
         do
         {
             var page = await ledger.QueryAsync(query, PageSize, next, ct);
-            foreach (var record in page.Items.Where(r => !RelevanceAssessment.IsDone(r) && r.Origin != ArticleOrigin.Manual))
+            foreach (var record in page.Items.Where(r => (again ? RelevancePrompt.IsOlder(r) : !RelevanceAssessment.IsDone(r)) && r.Origin != ArticleOrigin.Manual))
             {
                 if (queued == MaxPerRun)
                 {
@@ -42,7 +47,7 @@ public sealed class ArticleAssessing(ILedgerStore ledger, IParsedStore parsed, I
                 {
                     continue;
                 }
-                var message = new ArticleParsed(record.Id, record.SourceId, article.Id, article.ParserVersion, article.ParsedAt);
+                var message = new ArticleParsed(record.Id, record.SourceId, article.Id, article.ParserVersion, article.ParsedAt, Reassess: again);
                 await queue.SendLaterAsync(QueueNames.ArticleParsed, message, Spacing * queued, ct);
                 queued++;
             }

@@ -70,6 +70,9 @@ internal sealed class InMemoryLedger : ILedgerStore
                 RelevanceFilter.NotAssessed => !r.Stages.TryGetValue(Stage.Relevance, out var s) || s.Status == StageStatus.Failed,
                 var filter => (filter == RelevanceFilter.NotRelevant) == (r.Stages.TryGetValue(Stage.Relevance, out var rel) && rel.Answer == nameof(RelevanceVerdict.NotRelevant)),
             })
+            .Where(r => query.RelevanceOlderThan is null
+                || (r.Stages.TryGetValue(Stage.Relevance, out var judged) && judged.Status == StageStatus.Succeeded
+                    && !(judged.Version ?? "").StartsWith(query.RelevanceOlderThan + " ", StringComparison.Ordinal)))
             .Where(r => query.Draft == DraftFilter.Any
                 || (query.Draft == DraftFilter.Ready) == (r.Stages.TryGetValue(Stage.Extracted, out var ex) && ex.Answer == Pipeline.Core.Extraction.ExtractionAnswers.Draft))
             .Where(r => query.TitleContains is null

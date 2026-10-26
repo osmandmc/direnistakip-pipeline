@@ -251,3 +251,51 @@ public class RelevanceAssessmentTests
         Assert.Equal(new AssessResponse(0, 9, false, false), off);
     }
 }
+
+public class ReassessTests
+{
+    private readonly InMemoryLedger _ledger = new();
+    private readonly InMemoryParsed _parsed = new();
+    private readonly RecordingQueue _queue = new();
+    private static readonly DateTimeOffset At = new(2026, 10, 25, 9, 0, 0, TimeSpan.Zero);
+
+    private ArticleParsed Add(string id, string? version)
+    {
+        var stages = new Dictionary<Stage, StageResult> { [Stage.Parsed] = new(StageStatus.Succeeded, At, "evrensel-2") };
+        if (version is not null) stages[Stage.Relevance] = new(StageStatus.Succeeded, At, version, "…", "Relevant");
+        _ledger.Records[id] = new LedgerRecord(id, "evrensel", ArticleOrigin.Collector, $"https://www.evrensel.net/haber/{id}", stages, null, "Başlık", At, TurkeyTime.Normalize(At));
+        _parsed.Saved.Add(new ParsedArticle("p-" + id, id, "evrensel", "evrensel-2", At, null, "Başlık", At, "Metin."));
+        return new ArticleParsed(id, "evrensel", "p-" + id, "evrensel-2", At);
+    }
+
+    [Fact]
+    public async Task AnArticleJudgedByAnOlderPromptIsJudgedAgainOnlyWhenAsked()
+    {
+        var message = Add("old", "relevance-v1 · gemini-3.5-flash-lite");
+        var model = new ScriptedModel(_ => new ModelAnswer("""{"verdict":"not_relevant","reason":"Dış haber."}""", "gemini-3.5-flash-lite"));
+        var assessment = new RelevanceAssessment(_ledger, _parsed, new InMemoryRelevance(), model, _queue, TimeProvider.System);
+
+        Assert.Equal(AssessOutcome.NotRun, await assessment.HandleAsync(message));
+        Assert.Equal(AssessOutcome.Assessed, await assessment.HandleAsync(message with { Reassess = true }));
+
+        var stage = _ledger.Records["old"].Stages[Stage.Relevance];
+        Assert.Equal(("NotRelevant", $"{RelevancePrompt.Version} · gemini-3.5-flash-lite"), (stage.Answer, stage.Version));
+        // Judged with the current prompt now: asking again changes nothing.
+        Assert.Equal(AssessOutcome.NotRun, await assessment.HandleAsync(message with { Reassess = true }));
+    }
+
+    [Fact]
+    public async Task AgainQueuesOnlyOpenArticlesJudgedByAnOlderPrompt()
+    {
+        Add("old", "relevance-v1 · gemini");
+        Add("current", $"{RelevancePrompt.Version} · gemini");
+        Add("unassessed", null);
+
+        var result = await new ArticleAssessing(_ledger, _parsed, new ScriptedModel(_ => throw new InvalidOperationException()), _queue).RunAsync("evrensel", again: true);
+
+        Assert.Equal(1, result.Queued);
+        var sent = (ArticleParsed)Assert.Single(_queue.SentLater).Message!;
+        Assert.Equal(("old", true), (sent.ArticleId, sent.Reassess));
+    }
+}
+

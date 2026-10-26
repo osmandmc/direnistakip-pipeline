@@ -67,7 +67,8 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILan
                 open,
                 await ledger.CountAsync(openQuery with { Draft = DraftFilter.Ready }, ct),
                 await ledger.CountAsync(openQuery with { Relevance = RelevanceFilter.NotRelevant }, ct),
-                await ledger.CountAsync(openQuery with { Relevance = RelevanceFilter.NotAssessed }, ct)));
+                await ledger.CountAsync(openQuery with { Relevance = RelevanceFilter.NotAssessed }, ct),
+                await ledger.CountAsync(openQuery with { RelevanceOlderThan = RelevancePrompt.Version }, ct)));
         }
 
         // What the AI said about the articles researchers decided in the period, against what they did.

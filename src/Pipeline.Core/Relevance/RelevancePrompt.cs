@@ -24,6 +24,14 @@ public static class RelevancePrompt
         return new StreamReader(stream).ReadToEnd();
     });
 
+    /// <summary>The prompt with its placeholders, as the prompts endpoint shows it (B13).</summary>
+    public static string TemplateText => Template.Value;
+
+    /// <summary>Judged by another version of this prompt (its stage version is "prompt · model").</summary>
+    public static bool IsOlder(LedgerRecord record) =>
+        record.Stages.TryGetValue(Stage.Relevance, out var stage) && stage.Status == StageStatus.Succeeded
+            && !(stage.Version ?? "").StartsWith(Version + " ", StringComparison.Ordinal);
+
     public static string Build(ParsedArticle article) => Build(
         SourceCatalog.All.FirstOrDefault(s => s.Id == article.SourceId)?.Name ?? article.SourceId,
         article.PublishedAt, article.Title, article.Body);
