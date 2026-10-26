@@ -1,3 +1,4 @@
+using Pipeline.Core.Prompts;
 using Pipeline.Contracts;
 using Pipeline.Core.Storage;
 
@@ -33,7 +34,8 @@ public sealed class RelevanceAssessment(
     IRelevanceStore relevance,
     ILanguageModel model,
     IQueueSender queue,
-    TimeProvider clock)
+    TimeProvider clock,
+    ActivePrompts? prompts = null)
 {
     public const string ManualReason = "Chosen by a researcher (pasted link)";
 
@@ -47,9 +49,10 @@ public sealed class RelevanceAssessment(
     public async Task<AssessOutcome> HandleAsync(ArticleParsed message, CancellationToken ct = default)
     {
         var record = await ledger.GetAsync(message.ArticleId, ct);
+        var current = (await PromptAsync(ct)).Version;
         // Unknown, delivered twice, or already handled by researchers (the queue had no reader before this stage, so it
         // starts with every article parsed until then).
-        if (record is null || record.Outcome is not null || (IsDone(record) && !(message.Reassess && RelevancePrompt.IsOlder(record))))
+        if (record is null || record.Outcome is not null || (IsDone(record) && !(message.Reassess && RelevancePrompt.IsOlder(record, current))))
         {
             return AssessOutcome.NotRun;
         }
@@ -77,10 +80,11 @@ public sealed class RelevanceAssessment(
             return (AssessOutcome.NotRun, default);
         }
 
+        var prompt = await PromptAsync(ct);
         ModelAnswer answer;
         try
         {
-            answer = await model.AnswerJsonAsync(RelevancePrompt.Build(article), ct);
+            answer = await model.AnswerJsonAsync(RelevancePrompt.Build(article, prompt.Template), ct);
         }
         catch (ModelRateLimitedException e)
         {
@@ -92,11 +96,11 @@ public sealed class RelevanceAssessment(
         }
         catch (FormatException e)
         {
-            await RecordFailureAsync(record.Id, RelevancePrompt.Version, e.Message, ct);
+            await RecordFailureAsync(record.Id, prompt.Version, e.Message, ct);
             return (AssessOutcome.Failed, default);
         }
 
-        var version = $"{RelevancePrompt.Version} · {answer.Model}";
+        var version = $"{prompt.Version} · {answer.Model}";
         RelevanceVerdict verdict;
         string? reason;
         try
@@ -118,6 +122,10 @@ public sealed class RelevanceAssessment(
         }
         return (AssessOutcome.Assessed, default);
     }
+
+    /// <summary>The active prompt (B17), or the built-in one.</summary>
+    private Task<ActivePrompt> PromptAsync(CancellationToken ct) =>
+        prompts?.GetAsync(ActivePrompts.Relevance, ct) ?? Task.FromResult(ActivePrompts.Builtin(ActivePrompts.Relevance));
 
     private Task RecordFailureAsync(string articleId, string version, string reason, CancellationToken ct) =>
         ledger.RecordStageAsync(articleId, Stage.Relevance, new StageResult(StageStatus.Failed, clock.GetUtcNow(), version, reason), ct);

@@ -7,6 +7,7 @@ using Pipeline.Core.Collecting;
 using Pipeline.Core.Fetching;
 using Pipeline.Core.Parsing;
 using Pipeline.Core.Extraction;
+using Pipeline.Core.Prompts;
 using Pipeline.Core.Relevance;
 using Pipeline.Core.Storage;
 using Pipeline.Core.Submission;
@@ -52,18 +53,27 @@ builder.Services.AddSingleton(new Pipeline.Functions.Api.AiModels(relevanceModel
 GeminiModel Model(IServiceProvider sp, GeminiOptions options) =>
     new(sp.GetRequiredService<IHttpClientFactory>().CreateClient("gemini"), options);
 
+// B17: the prompt versions edited in the app; the stages run the active one (read at most once a minute).
+builder.Services.AddSingleton(sp => new ActivePrompts(sp.GetRequiredService<IPromptStore>(), sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddTransient(sp => new PromptEditing(
+    sp.GetRequiredService<IPromptStore>(), sp.GetRequiredService<ActivePrompts>(), sp.GetRequiredService<ILedgerStore>(),
+    sp.GetRequiredService<IParsedStore>(), sp.GetRequiredService<IDraftStore>(), sp.GetRequiredService<IListStore>(),
+    Model(sp, relevanceModel), Model(sp, extractionModel), sp.GetRequiredService<TimeProvider>()));
+
 builder.Services.AddTransient(sp => new RelevanceAssessment(
     sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), sp.GetRequiredService<IRelevanceStore>(),
-    Model(sp, relevanceModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<TimeProvider>()));
+    Model(sp, relevanceModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<TimeProvider>(),
+    sp.GetRequiredService<ActivePrompts>()));
 builder.Services.AddTransient(sp => new ArticleAssessing(
-    sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), Model(sp, relevanceModel), sp.GetRequiredService<IQueueSender>()));
+    sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), Model(sp, relevanceModel), sp.GetRequiredService<IQueueSender>(),
+    sp.GetRequiredService<ActivePrompts>()));
 builder.Services.AddTransient(sp => new DraftExtraction(
     sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), sp.GetRequiredService<IDraftStore>(),
     Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<TimeProvider>(),
-    sp.GetRequiredService<IListStore>()));
+    sp.GetRequiredService<IListStore>(), sp.GetRequiredService<ActivePrompts>()));
 builder.Services.AddSingleton<ListsUpdate>();
 builder.Services.AddSingleton(sp => new ArticleMetrics(
-    sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<TimeProvider>(), Model(sp, relevanceModel)));
+    sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<TimeProvider>(), Model(sp, relevanceModel), sp.GetRequiredService<ActivePrompts>()));
 builder.Services.AddTransient(sp => new ArticleDrafting(
     sp.GetRequiredService<ILedgerStore>(), Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>()));
 

@@ -15,6 +15,7 @@ internal static class StorageNames
     public const string DraftsContainer = "drafts";
     public const string RawHtmlBlobContainer = "raw-html";
     public const string ListsBlobContainer = "lists";
+    public const string PromptsBlobContainer = "prompts";
 }
 
 /// <summary>Creates Azure clients. In Azure: managed identity. Locally and in tests: connection strings (emulators).</summary>

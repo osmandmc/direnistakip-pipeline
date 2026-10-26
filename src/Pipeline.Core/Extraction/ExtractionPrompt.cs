@@ -66,10 +66,11 @@ public static class ExtractionPrompt
     public static string TemplateText => Template.Value;
 
     /// <param name="lists">The app's latest lists (B16); null: the snapshot in docs/extraction/lists.json.</param>
-    public static string Build(ParsedArticle article, ListsSnapshot? lists = null)
+    /// <param name="template">The prompt to fill (an edited version, B17); null: the built-in one.</param>
+    public static string Build(ParsedArticle article, ListsSnapshot? lists = null, string? template = null)
     {
         var body = article.Body.Trim();
-        return Template.Value
+        return (template ?? Template.Value)
             .Replace("{{LISTS}}", ListText(lists?.Lists ?? Snapshot.Value))
             .Replace("{{SOURCE}}", SourceCatalog.All.FirstOrDefault(s => s.Id == article.SourceId)?.Name ?? article.SourceId)
             .Replace("{{DATE}}", article.PublishedAt is { } date ? TurkeyTime.Normalize(date).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "bilinmiyor")

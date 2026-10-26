@@ -31,6 +31,7 @@ public sealed class EmulatorFixture : IAsyncLifetime
     public Database Database { get; private set; } = null!;
     public BlobContainerClient RawHtml { get; private set; } = null!;
     public BlobContainerClient Lists { get; private set; } = null!;
+    public BlobContainerClient Prompts { get; private set; } = null!;
     public QueueServiceClient Queues { get; private set; } = null!;
     private CosmosClient? _cosmosClient;
 
@@ -52,6 +53,8 @@ public sealed class EmulatorFixture : IAsyncLifetime
         await RawHtml.CreateIfNotExistsAsync();
         Lists = new BlobServiceClient(storage).GetBlobContainerClient(StorageNames.ListsBlobContainer);
         await Lists.CreateIfNotExistsAsync();
+        Prompts = new BlobServiceClient(storage).GetBlobContainerClient(StorageNames.PromptsBlobContainer);
+        await Prompts.CreateIfNotExistsAsync();
         Queues = new QueueServiceClient(storage, StorageClients.QueueOptions);
     }
 

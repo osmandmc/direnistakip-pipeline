@@ -1,3 +1,4 @@
+using Pipeline.Core.Prompts;
 using Pipeline.Contracts;
 using Pipeline.Core.Storage;
 
@@ -8,7 +9,7 @@ namespace Pipeline.Core.Relevance;
 /// or whose assessment failed. They go through the Relevance stage like new ones, spaced out so the model's per-minute
 /// limit holds; the call itself returns at once. Newest first, at most <see cref="MaxPerRun"/> per call.
 /// </summary>
-public sealed class ArticleAssessing(ILedgerStore ledger, IParsedStore parsed, ILanguageModel model, IQueueSender queue)
+public sealed class ArticleAssessing(ILedgerStore ledger, IParsedStore parsed, ILanguageModel model, IQueueSender queue, ActivePrompts? prompts = null)
 {
     public const int MaxPerRun = 200;
 
@@ -28,15 +29,16 @@ public sealed class ArticleAssessing(ILedgerStore ledger, IParsedStore parsed, I
             return new AssessResponse(0, (int)Spacing.TotalSeconds, false, false);
         }
 
+        var current = prompts is null ? RelevancePrompt.Version : (await prompts.GetAsync(ActivePrompts.Relevance, ct)).Version;
         var query = new LedgerQuery(sourceId, Status: ArticleStatusFilter.Parsed, Outcome: OutcomeFilter.Open,
-            RelevanceOlderThan: again ? RelevancePrompt.Version : null);
+            RelevanceOlderThan: again ? current : null);
         var queued = 0;
         var more = false;
         string? next = null;
         do
         {
             var page = await ledger.QueryAsync(query, PageSize, next, ct);
-            foreach (var record in page.Items.Where(r => (again ? RelevancePrompt.IsOlder(r) : !RelevanceAssessment.IsDone(r)) && r.Origin != ArticleOrigin.Manual))
+            foreach (var record in page.Items.Where(r => (again ? RelevancePrompt.IsOlder(r, current) : !RelevanceAssessment.IsDone(r)) && r.Origin != ArticleOrigin.Manual))
             {
                 if (queued == MaxPerRun)
                 {

@@ -41,7 +41,7 @@ public static class LocalResources
             await queues.GetQueueClient(queue).CreateIfNotExistsAsync(cancellationToken: ct);
         }
 
-        foreach (var container in new[] { StorageNames.RawHtmlBlobContainer, StorageNames.ListsBlobContainer })
+        foreach (var container in new[] { StorageNames.RawHtmlBlobContainer, StorageNames.ListsBlobContainer, StorageNames.PromptsBlobContainer })
         {
             await services.GetRequiredService<BlobServiceClient>().GetBlobContainerClient(container).CreateIfNotExistsAsync(cancellationToken: ct);
         }

@@ -1,3 +1,4 @@
+using Pipeline.Core.Prompts;
 using Pipeline.Contracts;
 using Pipeline.Core.Relevance;
 using Pipeline.Core.Sources;
@@ -9,7 +10,7 @@ namespace Pipeline.Core.Articles;
 /// Counts for the app's dashboard, made on request from the ledger (D-015 update): fine while the ledger holds
 /// thousands of records; rollups can replace this behind the same response if it grows large.
 /// </summary>
-public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILanguageModel? model = null)
+public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILanguageModel? model = null, ActivePrompts? prompts = null)
 {
     public const int DefaultDays = 14;
     public const int MaxDays = 31;
@@ -53,6 +54,7 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILan
             .OrderByDescending(f => f.At)
             .ToList();
 
+        var currentRelevance = prompts is null ? RelevancePrompt.Version : (await prompts.GetAsync(ActivePrompts.Relevance, ct)).Version;
         var sources = new List<SourceMetrics>();
         foreach (var source in sourceIds)
         {
@@ -72,7 +74,7 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILan
                 await ledger.CountAsync(openQuery with { Draft = DraftFilter.Ready }, ct),
                 await ledger.CountAsync(openQuery with { Relevance = RelevanceFilter.NotRelevant }, ct),
                 await ledger.CountAsync(openQuery with { Relevance = RelevanceFilter.NotAssessed }, ct),
-                await ledger.CountAsync(openQuery with { RelevanceOlderThan = RelevancePrompt.Version }, ct)));
+                await ledger.CountAsync(openQuery with { RelevanceOlderThan = currentRelevance }, ct)));
         }
 
         // What the AI said about the articles researchers decided in the period, against what they did.
