@@ -51,5 +51,36 @@ public sealed record AssessResponse(int Queued, int SpacingSeconds, bool More, b
 public sealed record PromptsResponse(IReadOnlyList<PromptInfo> Prompts, int OpenWithOlderVerdict, DateTimeOffset? ListsUpdatedAt = null);
 
 /// <param name="Name">"relevance" or "extraction".</param>
+/// <param name="Version">The version the stage runs now: the active edited one (B17), or the built-in one.</param>
 /// <param name="Text">The prompt with its placeholders ({{TITLE}}, {{TEXT}}, {{LISTS}} …).</param>
-public sealed record PromptInfo(string Name, string Version, string Model, string Text);
+/// <param name="Builtin">The version in the repository (docs/extraction), used when no edited version is active.</param>
+/// <param name="Versions">Versions saved in the app (B17), newest first.</param>
+public sealed record PromptInfo(string Name, string Version, string Model, string Text, string? Builtin = null,
+    IReadOnlyList<PromptVersionInfo>? Versions = null);
+
+/// <summary>A prompt version saved in the app (B17). Active: the stage runs it now.</summary>
+public sealed record PromptVersionInfo(string Version, string Text, string? Note, string? CreatedBy, DateTimeOffset CreatedAt,
+    DateTimeOffset? ActivatedAt, bool Active);
+
+/// <summary>A prompt version as stored (B17): "relevance-v3.1-e1" is the first edit made on top of built-in relevance-v3.1.</summary>
+public sealed record PromptVersionRecord(string Name, string Version, string Text, string? Note, string? CreatedBy, DateTimeOffset CreatedAt,
+    DateTimeOffset? ActivatedAt = null, string? ActivatedBy = null);
+
+/// <summary><c>POST /api/prompts/{name}/versions</c>: a new version, not active yet.</summary>
+public sealed record PromptVersionRequest(string Text, string? Note, string? By);
+
+/// <summary><c>POST /api/prompts/{name}/active</c>: Version "builtin" goes back to the repository's prompt.</summary>
+public sealed record PromptActivateRequest(string Version, string? By);
+
+/// <summary><c>POST /api/prompts/{name}/versions/{version}/try</c>: run the version on these articles (at most 10); nothing is saved.</summary>
+public sealed record PromptTryRequest(IReadOnlyList<string> ArticleIds);
+
+/// <summary>
+/// One article tried. Answer: the verdict ("Relevant", "NotRelevant", "Uncertain") or the extraction JSON; Reason: the
+/// verdict's reason or the draft's summary. Current…: what the running prompt concluded (ledger, latest draft). Error:
+/// why it was not tried (no text, the model's quota, an unreadable answer).
+/// </summary>
+public sealed record PromptTryResult(string ArticleId, string? Title, string? Answer, string? Reason, string? Error,
+    string? CurrentAnswer, string? CurrentReason, string? CurrentVersion);
+
+public sealed record PromptTryResponse(string Version, string? Model, IReadOnlyList<PromptTryResult> Results);

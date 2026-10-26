@@ -11,7 +11,10 @@ namespace Pipeline.Core.Relevance;
 /// </summary>
 public static class RelevancePrompt
 {
-    /// <summary>Change it with every change to the prompt file, so records say which prompt judged them.</summary>
+    /// <summary>
+    /// The built-in prompt's version: change it with every change to the prompt file, so records say which prompt judged
+    /// them. A version edited in the app (B17) is named after it ("relevance-v3.1-e1") and runs instead when active.
+    /// </summary>
     public const string Version = "relevance-v3.1";
 
     /// <summary>Characters of the body sent to the model.</summary>
@@ -27,16 +30,17 @@ public static class RelevancePrompt
     /// <summary>The prompt with its placeholders, as the prompts endpoint shows it (B13).</summary>
     public static string TemplateText => Template.Value;
 
-    /// <summary>Judged by another version of this prompt (its stage version is "prompt · model").</summary>
-    public static bool IsOlder(LedgerRecord record) =>
+    /// <summary>Judged by another version than <paramref name="current"/> (its stage version is "prompt · model").</summary>
+    public static bool IsOlder(LedgerRecord record, string current = Version) =>
         record.Stages.TryGetValue(Stage.Relevance, out var stage) && stage.Status == StageStatus.Succeeded
-            && !(stage.Version ?? "").StartsWith(Version + " ", StringComparison.Ordinal);
+            && !(stage.Version ?? "").StartsWith(current + " ", StringComparison.Ordinal);
 
-    public static string Build(ParsedArticle article) => Build(
+    /// <param name="template">The prompt to fill (an edited version, B17); null: the built-in one.</param>
+    public static string Build(ParsedArticle article, string? template = null) => Build(
         SourceCatalog.All.FirstOrDefault(s => s.Id == article.SourceId)?.Name ?? article.SourceId,
-        article.PublishedAt, article.Title, article.Body);
+        article.PublishedAt, article.Title, article.Body, template);
 
-    public static string Build(string source, DateTimeOffset? publishedAt, string? title, string body) => Template.Value
+    public static string Build(string source, DateTimeOffset? publishedAt, string? title, string body, string? template = null) => (template ?? Template.Value)
         .Replace("{{SOURCE}}", source)
         .Replace("{{DATE}}", publishedAt is { } date ? TurkeyTime.Normalize(date).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "bilinmiyor")
         .Replace("{{TITLE}}", title ?? "")

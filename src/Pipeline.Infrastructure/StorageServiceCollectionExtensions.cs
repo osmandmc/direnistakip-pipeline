@@ -40,6 +40,8 @@ public static class StorageServiceCollectionExtensions
             sp.GetRequiredService<BlobServiceClient>().GetBlobContainerClient(StorageNames.RawHtmlBlobContainer)));
         services.AddSingleton<IListStore>(sp => new BlobListStore(
             sp.GetRequiredService<BlobServiceClient>().GetBlobContainerClient(StorageNames.ListsBlobContainer)));
+        services.AddSingleton<IPromptStore>(sp => new BlobPromptStore(
+            sp.GetRequiredService<BlobServiceClient>().GetBlobContainerClient(StorageNames.PromptsBlobContainer)));
         services.AddSingleton<IQueueSender>(sp => new StorageQueueSender(sp.GetRequiredService<QueueServiceClient>()));
         return services;
     }

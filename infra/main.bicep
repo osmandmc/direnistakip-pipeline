@@ -123,6 +123,12 @@ resource listsContainer 'Microsoft.Storage/storageAccounts/blobServices/containe
   name: 'lists'
 }
 
+// Prompt versions edited in the app (B17).
+resource promptsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'prompts'
+}
+
 resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2023-05-01' = {
   parent: storage
   name: 'default'

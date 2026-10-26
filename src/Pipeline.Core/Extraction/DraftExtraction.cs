@@ -1,3 +1,4 @@
+using Pipeline.Core.Prompts;
 using Pipeline.Contracts;
 using Pipeline.Core.Relevance;
 using Pipeline.Core.Storage;
@@ -18,7 +19,8 @@ public sealed class DraftExtraction(
     ILanguageModel model,
     IQueueSender queue,
     TimeProvider clock,
-    IListStore? listStore = null)
+    IListStore? listStore = null,
+    ActivePrompts? prompts = null)
 {
     public static readonly TimeSpan SlowAnswerRetryAfter = TimeSpan.FromMinutes(2);
 
@@ -36,10 +38,11 @@ public sealed class DraftExtraction(
 
         ModelAnswer answer;
         ListsSnapshot? lists = null;
+        var prompt = prompts is null ? ActivePrompts.Builtin(ActivePrompts.Extraction) : await prompts.GetAsync(ActivePrompts.Extraction, ct);
         try
         {
             lists = listStore is null ? null : await listStore.GetLatestAsync(ct);
-            answer = await model.AnswerJsonAsync(ExtractionPrompt.Build(article, lists), ct);
+            answer = await model.AnswerJsonAsync(ExtractionPrompt.Build(article, lists, prompt.Template), ct);
         }
         catch (ModelRateLimitedException e)
         {
@@ -53,11 +56,11 @@ public sealed class DraftExtraction(
         }
         catch (FormatException e)
         {
-            await RecordFailureAsync(record.Id, ExtractionPrompt.Version, e.Message, ct);
+            await RecordFailureAsync(record.Id, prompt.Version, e.Message, ct);
             return AssessOutcome.Failed;
         }
 
-        var version = $"{ExtractionPrompt.Version} · {ExtractionPrompt.ListsLabel(lists)} · {answer.Model}";
+        var version = $"{prompt.Version} · {ExtractionPrompt.ListsLabel(lists)} · {answer.Model}";
         (string Json, bool Relevant, string? Summary) draft;
         try
         {
