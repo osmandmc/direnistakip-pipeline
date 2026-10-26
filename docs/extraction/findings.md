@@ -162,3 +162,11 @@ Day arrests, the Borusan tent). Known weak spots, left to "uncertain" and the re
 own building. v2 had been too strict (it rejected union press statements and lost a real case) and v3 too loose (no-action
 stories became "uncertain"). Articles assessed before keep their v1 verdict.
 
+## Evidence quotes, prompt v2.1 (2026-10-26)
+
+For the app's highlighting (R27): with prompt v2, Gemini Flash-Lite quoted only the two fields of the example
+(`case.company`, `protest.types`), whatever the instruction said. v2.1 names the fields that need a quote, asks for the
+words exactly as written (no list values, the date's wording rather than the date) and shows a fuller example. On 15
+drafts: 7 quotes per draft instead of 2; 93 of 105 found in the article's title or text after ignoring case, spacing and
+quote marks (89%). The rest are paraphrases; the app marks them "bulunamadı".
+

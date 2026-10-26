@@ -23,7 +23,7 @@ public static class ExtractionAnswers
 public static class ExtractionPrompt
 {
     /// <summary>The prompt file is prompt v2 (docs/extraction/findings.md); change this with every change to the file.</summary>
-    public const string Version = "prompt-v2";
+    public const string Version = "prompt-v2.1";
 
     /// <summary>Characters of the body sent: the whole text of nearly every article.</summary>
     public const int TextLength = 15000;

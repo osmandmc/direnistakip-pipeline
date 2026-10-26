@@ -15,8 +15,14 @@ yalnızca aşağıdaki JSON biçiminde yanıt ver; JSON dışında hiçbir şey 
 
 - Yalnızca haberde yazanı kullan. Haberde olmayan bir bilgiyi tahmin etme: bilinmiyorsa `null` (ya da boş liste) yaz.
 - Listeden seçilen alanlarda **yalnızca aşağıdaki listelerdeki değerleri, aynen yazıldığı gibi** kullan.
-- Her doldurduğun alan için `evidence` içine haberden **aynen alıntılanmış** kısa bir cümle ya da cümle parçası yaz
-  (alan adı → alıntı). Tarih gibi haberin kendisinden çıkan bilgiler için alıntı gerekmez.
+- Doldurduğun **her** alan için `evidence` içine, o bilginin geçtiği yeri haberden **harfi harfine kopyalanmış** kısa bir
+  cümle parçasıyla yaz (alan adı → alıntı; en fazla 20 kelime). Araştırmacılar alıntıyı haberde işaretli görür, bu yüzden
+  alıntıyı değiştirme, kısaltma ya da özetleme. Şu alanlar doluysa alıntıları mutlaka olsun: `case.company`,
+  `case.main_company`, `case.organizations`, `case.reasons`, `case.employment_types`, `case.employee_count`,
+  `case.fired_count`, `protest.start_date`, `protest.types`, `protest.places`, `protest.locations`,
+  `protest.participant_count`, `protest.custody_count`, `protest.interventions`. Tarih için tarihin kendisini değil,
+  haberde geçtiği ifadeyi alıntıla ("bugün", "19 Haziran'da"); liste alanları için listedeki değeri değil, haberdeki
+  ifadeyi. Bilgi haberde geçmiyorsa o alan için alıntı yazma.
 - Tarihleri `YYYY-AA-GG` biçiminde yaz. Haberde yıl yoksa haberin tarihini esas al.
 
 ## Alanlar
@@ -69,7 +75,10 @@ sayı aralığı, hak geliştirme.
     "participant_count": null, "custody_count": null,
     "interventions": [], "strike_hours": null
   },
-  "evidence": { "case.company": "alıntı", "protest.types": "alıntı" }
+  "evidence": {
+    "case.company": "alıntı", "case.organizations": "alıntı", "case.reasons": "alıntı",
+    "protest.types": "alıntı", "protest.places": "alıntı", "protest.locations": "alıntı", "protest.start_date": "alıntı"
+  }
 }
 ```
 
