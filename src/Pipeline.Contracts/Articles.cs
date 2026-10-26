@@ -47,7 +47,8 @@ public sealed record AssessResponse(int Queued, int SpacingSeconds, bool More, b
 /// <c>GET /prompts</c> (B13): the prompts the AI stages run now, and how many open articles were judged by an older
 /// relevance prompt (they can be judged again: <c>POST /articles/assess?again=true</c>).
 /// </summary>
-public sealed record PromptsResponse(IReadOnlyList<PromptInfo> Prompts, int OpenWithOlderVerdict);
+/// ListsUpdatedAt: the date of the list values the extraction prompt offers (B16); null: the snapshot of 2026-10-21.
+public sealed record PromptsResponse(IReadOnlyList<PromptInfo> Prompts, int OpenWithOlderVerdict, DateTimeOffset? ListsUpdatedAt = null);
 
 /// <param name="Name">"relevance" or "extraction".</param>
 /// <param name="Text">The prompt with its placeholders ({{TITLE}}, {{TEXT}}, {{LISTS}} …).</param>

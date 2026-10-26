@@ -17,7 +17,8 @@ public sealed class DraftExtraction(
     IDraftStore drafts,
     ILanguageModel model,
     IQueueSender queue,
-    TimeProvider clock)
+    TimeProvider clock,
+    IListStore? listStore = null)
 {
     public static readonly TimeSpan SlowAnswerRetryAfter = TimeSpan.FromMinutes(2);
 
@@ -34,9 +35,11 @@ public sealed class DraftExtraction(
         }
 
         ModelAnswer answer;
+        ListsSnapshot? lists = null;
         try
         {
-            answer = await model.AnswerJsonAsync(ExtractionPrompt.Build(article), ct);
+            lists = listStore is null ? null : await listStore.GetLatestAsync(ct);
+            answer = await model.AnswerJsonAsync(ExtractionPrompt.Build(article, lists), ct);
         }
         catch (ModelRateLimitedException e)
         {
@@ -54,7 +57,7 @@ public sealed class DraftExtraction(
             return AssessOutcome.Failed;
         }
 
-        var version = $"{ExtractionPrompt.Version} · {answer.Model}";
+        var version = $"{ExtractionPrompt.Version} · {ExtractionPrompt.ListsLabel(lists)} · {answer.Model}";
         (string Json, bool Relevant, string? Summary) draft;
         try
         {

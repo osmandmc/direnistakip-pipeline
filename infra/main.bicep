@@ -117,6 +117,12 @@ resource rawHtmlContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
   name: 'raw-html'
 }
 
+// The app's list values for the Extract stage (B16).
+resource listsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'lists'
+}
+
 resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2023-05-01' = {
   parent: storage
   name: 'default'

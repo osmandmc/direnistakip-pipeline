@@ -38,6 +38,8 @@ public static class StorageServiceCollectionExtensions
         services.AddSingleton<IDraftStore>(sp => new CosmosDraftStore(Db(sp).GetContainer(StorageNames.DraftsContainer)));
         services.AddSingleton<IRawHtmlStore>(sp => new BlobRawHtmlStore(
             sp.GetRequiredService<BlobServiceClient>().GetBlobContainerClient(StorageNames.RawHtmlBlobContainer)));
+        services.AddSingleton<IListStore>(sp => new BlobListStore(
+            sp.GetRequiredService<BlobServiceClient>().GetBlobContainerClient(StorageNames.ListsBlobContainer)));
         services.AddSingleton<IQueueSender>(sp => new StorageQueueSender(sp.GetRequiredService<QueueServiceClient>()));
         return services;
     }

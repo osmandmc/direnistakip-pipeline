@@ -15,7 +15,7 @@ public sealed record AiModels(string Relevance, string Extraction);
 /// <c>GET /api/prompts</c> (B13): the prompts the AI stages run now, with their versions and models, and how many open
 /// articles were judged by an older relevance prompt. For the app's "AI istemleri" page. Requires a function key (D-025).
 /// </summary>
-public sealed class PromptsFunction(AiModels models, ILedgerStore ledger)
+public sealed class PromptsFunction(AiModels models, ILedgerStore ledger, IListStore lists)
 {
     [Function("GetPrompts")]
     public async Task<IActionResult> Run(
@@ -28,6 +28,6 @@ public sealed class PromptsFunction(AiModels models, ILedgerStore ledger)
         [
             new PromptInfo("relevance", RelevancePrompt.Version, models.Relevance, RelevancePrompt.TemplateText),
             new PromptInfo("extraction", ExtractionPrompt.Version, models.Extraction, ExtractionPrompt.TemplateText),
-        ], older));
+        ], older, (await lists.GetLatestAsync(ct))?.UpdatedAt));
     }
 }
