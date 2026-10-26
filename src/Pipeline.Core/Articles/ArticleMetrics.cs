@@ -37,8 +37,12 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILan
             {
                 var today = events.Where(e => e.SourceId == source && e.Day == day).ToList();
                 int Count(string kind) => today.Count(e => e.Kind == kind);
+                var arrived = records.Where(r => r.SourceId == source && r.Stages.TryGetValue(Stage.Submitted, out var s) && Day(s.At) == day)
+                    .Select(StateNow).ToList();
+                int Now(string state) => arrived.Count(s => s == state);
                 return new DailyMetrics(day, source, Count(Received), Count(Parsed), Count(Failed), Count(Digested), Count(Dismissed),
-                    Count(AssessedRelevant), Count(AssessedUncertain), Count(AssessedNotRelevant), Count(Drafted));
+                    Count(AssessedRelevant), Count(AssessedUncertain), Count(AssessedNotRelevant), Count(Drafted),
+                    new ArticleStates(Now(Digested), Now(Dismissed), Now(Drafted), Now(ToReview), Now(AssessedNotRelevant), Now(Failed), Now(Processing)));
             }))
             .ToList();
 
@@ -83,6 +87,32 @@ public sealed class ArticleMetrics(ILedgerStore ledger, TimeProvider clock, ILan
 
     private const string Received = "received", Parsed = "parsed", Failed = "failed", Digested = "digested", Dismissed = "dismissed",
         AssessedRelevant = "relevant", AssessedUncertain = "uncertain", AssessedNotRelevant = "notRelevant", Drafted = "drafted";
+
+    private const string ToReview = "toReview", Processing = "processing";
+
+    /// <summary>Where an article stands now, in the event names above (B14).</summary>
+    private static string StateNow(LedgerRecord record)
+    {
+        if (record.Outcome is { } outcome)
+        {
+            return outcome.Kind == OutcomeKind.Digested ? Digested : Dismissed;
+        }
+        if (new[] { Stage.Submitted, Stage.Fetched, Stage.Parsed }.Any(s => record.Stages.TryGetValue(s, out var r) && r.Status == StageStatus.Failed))
+        {
+            return Failed;
+        }
+        if (!(record.Stages.TryGetValue(Stage.Parsed, out var parsed) && parsed.Status == StageStatus.Succeeded))
+        {
+            return Processing;
+        }
+        if (Verdict(record) == RelevanceVerdict.NotRelevant)
+        {
+            return AssessedNotRelevant;
+        }
+        return record.Stages.TryGetValue(Stage.Extracted, out var extracted) && extracted.Answer == Extraction.ExtractionAnswers.Draft
+            ? Drafted
+            : ToReview;
+    }
 
     private static RelevanceVerdict? Verdict(LedgerRecord record) =>
         record.Stages.TryGetValue(Stage.Relevance, out var stage) && stage.Status == StageStatus.Succeeded
