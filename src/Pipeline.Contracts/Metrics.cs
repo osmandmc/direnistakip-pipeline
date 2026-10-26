@@ -32,11 +32,20 @@ public sealed record SourceMetrics(
 
 /// <summary>
 /// One day of one source; days without activity are included with zeros. Assessed…: the AI's verdicts given that day
-/// (B9); Drafted: drafts with a labour action made that day (B12).
+/// (B9); Drafted: drafts with a labour action made that day (B12). Now: where the articles received that day stand now
+/// (B14); its counts add up to Received.
 /// </summary>
 public sealed record DailyMetrics(
     DateOnly Day, string SourceId, int Received, int Parsed, int Failed, int Digested, int Dismissed,
-    int AssessedRelevant = 0, int AssessedUncertain = 0, int AssessedNotRelevant = 0, int Drafted = 0);
+    int AssessedRelevant = 0, int AssessedUncertain = 0, int AssessedNotRelevant = 0, int Drafted = 0,
+    ArticleStates? Now = null);
+
+/// <summary>
+/// Articles by where they stand now (B14). Linked / Dismissed: the researchers' decision. Open ones: WithDraft (an AI
+/// draft, not rejected by the AI), NotRelevant (rejected by the AI), ToReview (the rest). Failed: download or reading
+/// failed (a failed AI step does not count). Processing: received, text not read yet.
+/// </summary>
+public sealed record ArticleStates(int Linked, int Dismissed, int WithDraft, int ToReview, int NotRelevant, int Failed, int Processing);
 
 /// <summary>
 /// The AI stages (B11). Enabled: a model key is configured. Agreement: for articles researchers decided in the period

@@ -40,9 +40,12 @@ public class ArticleMetricsTests
         Assert.Equal((new DateOnly(2026, 10, 18), new DateOnly(2026, 10, 20)), (result.From, result.To));
         var days = result.Days.Where(d => d.SourceId == "evrensel").ToDictionary(d => d.Day.Day);
         Assert.Equal([18, 19, 20], days.Keys.Order());
-        Assert.Equal(new DailyMetrics(new(2026, 10, 18), "evrensel", 0, 0, 0, 0, 0), days[18]);
-        Assert.Equal(new DailyMetrics(new(2026, 10, 19), "evrensel", 1, 0, 0, 0, 0), days[19]);
-        Assert.Equal(new DailyMetrics(new(2026, 10, 20), "evrensel", 1, 1, 1, 1, 0), days[20]);
+        Assert.Equal(new DailyMetrics(new(2026, 10, 18), "evrensel", 0, 0, 0, 0, 0), days[18] with { Now = null });
+        Assert.Equal(new DailyMetrics(new(2026, 10, 19), "evrensel", 1, 0, 0, 0, 0), days[19] with { Now = null });
+        Assert.Equal(new DailyMetrics(new(2026, 10, 20), "evrensel", 1, 1, 1, 1, 0), days[20] with { Now = null });
+        // Where each day's arrivals stand now: "a" (received the 19th) is linked, "b" (the 20th) failed to download.
+        Assert.Equal(new ArticleStates(1, 0, 0, 0, 0, 0, 0), days[19].Now);
+        Assert.Equal(new ArticleStates(0, 0, 0, 0, 0, 1, 0), days[20].Now);
     }
 
     [Fact]
@@ -104,6 +107,8 @@ public class ArticleMetricsTests
         Assert.Equal((3, 1, 1, 1), (evrensel.Open, evrensel.OpenWithDraft, evrensel.OpenNotRelevant, evrensel.OpenNotAssessed));
         var today = result.Days.Single(d => d.SourceId == "evrensel" && d.Day.Day == 20);
         Assert.Equal((1, 0, 1, 1), (today.AssessedRelevant, today.AssessedUncertain, today.AssessedNotRelevant, today.Drafted));
+        // Received the 20th: one with a draft, one rejected by the AI, one not assessed yet (to review).
+        Assert.Equal(new ArticleStates(0, 0, 1, 1, 1, 0, 0), today.Now);
         Assert.True(result.Ai!.Enabled);
         Assert.Equal(new VerdictAgreement(RelevanceVerdict.NotRelevant, 1, 1), result.Ai.Agreement.Single(a => a.Verdict == RelevanceVerdict.NotRelevant));
         Assert.False((await _metrics.GetAsync(3)).Ai!.Enabled); // no model: the AI is off
