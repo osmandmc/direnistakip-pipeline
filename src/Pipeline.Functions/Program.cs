@@ -59,7 +59,9 @@ builder.Services.AddTransient(sp => new ArticleAssessing(
     sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), Model(sp, relevanceModel), sp.GetRequiredService<IQueueSender>()));
 builder.Services.AddTransient(sp => new DraftExtraction(
     sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<IParsedStore>(), sp.GetRequiredService<IDraftStore>(),
-    Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<TimeProvider>()));
+    Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<TimeProvider>(),
+    sp.GetRequiredService<IListStore>()));
+builder.Services.AddSingleton<ListsUpdate>();
 builder.Services.AddSingleton(sp => new ArticleMetrics(
     sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<TimeProvider>(), Model(sp, relevanceModel)));
 builder.Services.AddTransient(sp => new ArticleDrafting(

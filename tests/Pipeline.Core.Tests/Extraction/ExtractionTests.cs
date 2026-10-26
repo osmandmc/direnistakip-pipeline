@@ -103,7 +103,7 @@ public class DraftExtractionTests
         Assert.Equal(AssessOutcome.Assessed, await Extraction(model).HandleAsync(message));
 
         var draft = Assert.Single(_drafts.Saved);
-        Assert.Equal(("a", "p-a", true, "Örnek Metal · Fiili grev", $"{ExtractionPrompt.Version} · gemini-3-flash"),
+        Assert.Equal(("a", "p-a", true, "Örnek Metal · Fiili grev", $"{ExtractionPrompt.Version} · lists 2026-10-21 · gemini-3-flash"),
             (draft.ArticleId, draft.ParsedId, draft.Relevant, draft.Summary, draft.Version));
         var stage = _ledger.Records["a"].Stages[Stage.Extracted];
         Assert.Equal((StageStatus.Succeeded, ExtractionAnswers.Draft, "Örnek Metal · Fiili grev"), (stage.Status, stage.Answer, stage.Reason));

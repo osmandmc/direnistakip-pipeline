@@ -42,21 +42,35 @@ public static class ExtractionPrompt
 
     private static readonly Lazy<string> Template = new(() => Resource("extraction-prompt.md"));
 
-    private static readonly Lazy<string> ListText = new(() =>
+    /// <summary>The lists the prompt offers, as the app sends them (B16).</summary>
+    public static IReadOnlyList<string> ListKeys { get; } = Lists.Select(l => l.Key).ToList();
+
+    /// <summary>The snapshot in docs/extraction/lists.json (2026-10-21): used until the app first sends its lists.</summary>
+    public static readonly DateTimeOffset SnapshotDate = new(2026, 10, 21, 0, 0, 0, TimeSpan.Zero);
+
+    private static readonly Lazy<IReadOnlyDictionary<string, IReadOnlyList<string>>> Snapshot = new(() =>
     {
         using var json = JsonDocument.Parse(Resource("extraction-lists.json"));
-        return string.Join("\n\n", Lists.Select(l =>
-            $"### {l.Title}\n" + string.Join('\n', json.RootElement.GetProperty(l.Key).EnumerateArray().Select(v => "- " + v.GetString()))));
+        return Lists.ToDictionary(l => l.Key,
+            l => (IReadOnlyList<string>)json.RootElement.GetProperty(l.Key).EnumerateArray().Select(v => v.GetString()!).ToList());
     });
+
+    private static string ListText(IReadOnlyDictionary<string, IReadOnlyList<string>> lists) =>
+        string.Join("\n\n", Lists.Select(l => $"### {l.Title}\n" + string.Join('\n', lists[l.Key].Select(v => "- " + v))));
+
+    /// <summary>"lists 2026-10-26": which list values a draft was made with, for its version.</summary>
+    public static string ListsLabel(ListsSnapshot? lists) =>
+        "lists " + (lists?.UpdatedAt ?? SnapshotDate).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>The prompt with its placeholders, as the prompts endpoint shows it (B13); {{LISTS}} holds the list values.</summary>
     public static string TemplateText => Template.Value;
 
-    public static string Build(ParsedArticle article)
+    /// <param name="lists">The app's latest lists (B16); null: the snapshot in docs/extraction/lists.json.</param>
+    public static string Build(ParsedArticle article, ListsSnapshot? lists = null)
     {
         var body = article.Body.Trim();
         return Template.Value
-            .Replace("{{LISTS}}", ListText.Value)
+            .Replace("{{LISTS}}", ListText(lists?.Lists ?? Snapshot.Value))
             .Replace("{{SOURCE}}", SourceCatalog.All.FirstOrDefault(s => s.Id == article.SourceId)?.Name ?? article.SourceId)
             .Replace("{{DATE}}", article.PublishedAt is { } date ? TurkeyTime.Normalize(date).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "bilinmiyor")
             .Replace("{{TITLE}}", article.Title ?? "")
