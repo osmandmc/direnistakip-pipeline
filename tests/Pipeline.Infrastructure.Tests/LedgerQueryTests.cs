@@ -204,6 +204,9 @@ public class LedgerQueryTests(EmulatorFixture emulators)
         Assert.Equal(5, any.Count);
         Assert.Equal(1, await _store.CountAsync(new LedgerQuery(_source, Relevance: RelevanceFilter.NotRelevant)));
         Assert.Equal([failed, notAssessed], await AllIds(new LedgerQuery(_source, Relevance: RelevanceFilter.NotAssessed)));
+        await _store.RecordStageAsync(uncertain, Stage.Relevance, new(StageStatus.Succeeded, DateTimeOffset.UtcNow, "relevance-v3.1 · gemini", "Belirsiz.", "Uncertain"));
+        // Judged by another prompt than relevance-v3.1 (relevance-v1 here); not assessed or failed ones are not "judged".
+        Assert.Equal([relevant, rejected], await AllIds(new LedgerQuery(_source, RelevanceOlderThan: "relevance-v3.1")));
     }
 
     [Fact]

@@ -81,6 +81,9 @@ public enum DraftFilter
 /// <param name="From">Inclusive, compared with the list date.</param>
 /// <param name="Before">Exclusive.</param>
 /// <param name="TitleContains">Text the title must contain, compared in folded form (<see cref="Articles.TitleSearch"/>).</param>
+/// <param name="RelevanceOlderThan">
+/// A relevance prompt version ("relevance-v3.1"): only articles judged by another version of the prompt (B13).
+/// </param>
 public sealed record LedgerQuery(
     string? SourceId = null,
     DateTimeOffset? From = null,
@@ -89,7 +92,8 @@ public sealed record LedgerQuery(
     OutcomeFilter Outcome = OutcomeFilter.Open,
     string? TitleContains = null,
     RelevanceFilter Relevance = RelevanceFilter.Any,
-    DraftFilter Draft = DraftFilter.Any);
+    DraftFilter Draft = DraftFilter.Any,
+    string? RelevanceOlderThan = null);
 
 /// <summary>A page of records; <see cref="Next"/> is an opaque token for the following page, or null.</summary>
 public sealed record LedgerPage(IReadOnlyList<LedgerRecord> Items, string? Next);

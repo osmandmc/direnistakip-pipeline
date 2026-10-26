@@ -49,7 +49,7 @@ public sealed class RelevanceAssessment(
         var record = await ledger.GetAsync(message.ArticleId, ct);
         // Unknown, delivered twice, or already handled by researchers (the queue had no reader before this stage, so it
         // starts with every article parsed until then).
-        if (record is null || IsDone(record) || record.Outcome is not null)
+        if (record is null || record.Outcome is not null || (IsDone(record) && !(message.Reassess && RelevancePrompt.IsOlder(record))))
         {
             return AssessOutcome.NotRun;
         }

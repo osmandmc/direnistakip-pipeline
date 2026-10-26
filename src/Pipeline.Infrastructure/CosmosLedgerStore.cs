@@ -179,6 +179,12 @@ internal sealed class CosmosLedgerStore(Container container) : ILedgerStore
             RelevanceFilter.NotAssessed => $" AND (NOT IS_DEFINED(c.stages.{Stage.Relevance}) OR c.stages.{Stage.Relevance}.status = '{StageStatus.Failed}')",
             _ => "",
         });
+        if (query.RelevanceOlderThan is { } current)
+        {
+            // The stage's version is "prompt · model": judged, by a prompt other than the current one.
+            sql.Append($" AND c.stages.{Stage.Relevance}.status = '{StageStatus.Succeeded}' AND NOT STARTSWITH(c.stages.{Stage.Relevance}.version, @promptVersion)");
+            parameters.Add(("@promptVersion", current + " "));
+        }
         var draft = $"c.stages.{Stage.Extracted}.answer";
         sql.Append(query.Draft switch
         {

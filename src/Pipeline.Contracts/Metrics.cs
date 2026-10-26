@@ -17,6 +17,7 @@ public sealed record MetricsResponse(
 /// <param name="OpenWithDraft">Of those: with an AI draft (B12).</param>
 /// <param name="OpenNotRelevant">Of those: judged not relevant by the AI (B9).</param>
 /// <param name="OpenNotAssessed">Of those: not assessed by the AI yet, or the assessment failed (pasted links excepted).</param>
+/// <param name="OpenWithOlderVerdict">Of those: judged by an older relevance prompt (B13).</param>
 public sealed record SourceMetrics(
     string SourceId,
     DateTimeOffset? LastReceivedAt,
@@ -26,7 +27,8 @@ public sealed record SourceMetrics(
     int Open,
     int OpenWithDraft = 0,
     int OpenNotRelevant = 0,
-    int OpenNotAssessed = 0);
+    int OpenNotAssessed = 0,
+    int OpenWithOlderVerdict = 0);
 
 /// <summary>
 /// One day of one source; days without activity are included with zeros. Assessed…: the AI's verdicts given that day

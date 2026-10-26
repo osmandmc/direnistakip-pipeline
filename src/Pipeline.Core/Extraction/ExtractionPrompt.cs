@@ -49,6 +49,9 @@ public static class ExtractionPrompt
             $"### {l.Title}\n" + string.Join('\n', json.RootElement.GetProperty(l.Key).EnumerateArray().Select(v => "- " + v.GetString()))));
     });
 
+    /// <summary>The prompt with its placeholders, as the prompts endpoint shows it (B13); {{LISTS}} holds the list values.</summary>
+    public static string TemplateText => Template.Value;
+
     public static string Build(ParsedArticle article)
     {
         var body = article.Body.Trim();

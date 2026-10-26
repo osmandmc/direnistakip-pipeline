@@ -48,6 +48,7 @@ GeminiOptions Gemini(string modelSetting, string fallback) => new()
 var relevanceModel = Gemini("Gemini:Model", new GeminiOptions().Model);
 var extractionModel = Gemini("Gemini:ExtractionModel", new GeminiOptions().Model);
 builder.Services.AddHttpClient("gemini", http => http.Timeout = TimeSpan.FromSeconds(120));
+builder.Services.AddSingleton(new Pipeline.Functions.Api.AiModels(relevanceModel.Model, extractionModel.Model));
 GeminiModel Model(IServiceProvider sp, GeminiOptions options) =>
     new(sp.GetRequiredService<IHttpClientFactory>().CreateClient("gemini"), options);
 

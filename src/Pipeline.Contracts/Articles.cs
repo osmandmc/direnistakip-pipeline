@@ -42,3 +42,13 @@ public sealed record ReparseResponse(int Examined, int Parsed, int StillFailed, 
 /// ModelConfigured false: no key, nothing queued.
 /// </summary>
 public sealed record AssessResponse(int Queued, int SpacingSeconds, bool More, bool ModelConfigured);
+
+/// <summary>
+/// <c>GET /prompts</c> (B13): the prompts the AI stages run now, and how many open articles were judged by an older
+/// relevance prompt (they can be judged again: <c>POST /articles/assess?again=true</c>).
+/// </summary>
+public sealed record PromptsResponse(IReadOnlyList<PromptInfo> Prompts, int OpenWithOlderVerdict);
+
+/// <param name="Name">"relevance" or "extraction".</param>
+/// <param name="Text">The prompt with its placeholders ({{TITLE}}, {{TEXT}}, {{LISTS}} …).</param>
+public sealed record PromptInfo(string Name, string Version, string Model, string Text);
