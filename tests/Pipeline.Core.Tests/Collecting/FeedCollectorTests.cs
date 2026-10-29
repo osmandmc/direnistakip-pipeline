@@ -31,14 +31,15 @@ public class FeedCollectorTests
         var first = await collector.CollectAsync(_evrensel);
         var second = await collector.CollectAsync(_evrensel);
 
-        Assert.Equal(new FeedCollectionResult("evrensel", 3, 3, 0, 0), first);
-        Assert.Equal(new FeedCollectionResult("evrensel", 3, 0, 3, 0), second);
+        // Only the İşçi-Sendika item of the three (B18).
+        Assert.Equal(new FeedCollectionResult("evrensel", 1, 1, 0, 0, 2), first);
+        Assert.Equal(new FeedCollectionResult("evrensel", 1, 0, 1, 0, 2), second);
         Assert.Equal(new Uri("https://www.evrensel.net/rss/haber.xml"), requested[0]);
         Assert.All(_ledger.Records.Values, r => Assert.Equal(ArticleOrigin.Collector, r.Origin));
         // Queued for Fetch with the feed's title and date.
         var message = Assert.IsType<ArticleSubmitted>(_queue.Sent[0].Message);
-        Assert.Equal("Avukat Afşin Hatipoğlu: canlı yayında tehdit edildim", message.Title);
-        Assert.Equal(3, _queue.Sent.Count);
+        Assert.Equal("DİSK Bursa'dan seslendi: Gelirde, vergide ve ülkede adalet istiyoruz", message.Title);
+        Assert.Single(_queue.Sent);
     }
 
     [Fact]
@@ -63,7 +64,7 @@ public class FeedCollectorTests
 
         var result = await collector.CollectAsync(kizilbayrak);
 
-        Assert.Equal(new FeedCollectionResult("kizilbayrak", 2, 2, 0, 0), result);
+        Assert.Equal(new FeedCollectionResult("kizilbayrak", 1, 1, 0, 0, 1), result); // the Sınıf item; the Kadın one is left out
         Assert.All(_ledger.Records.Values, r =>
         {
             Assert.Equal("kizilbayrak", r.SourceId);

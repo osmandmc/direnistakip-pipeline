@@ -1,5 +1,6 @@
 using System.Text;
 using Pipeline.Core.Collecting;
+using Pipeline.Core.Sources;
 
 namespace Pipeline.Core.Tests.Collecting;
 
@@ -37,6 +38,43 @@ public class FeedReaderTests
         var article = Assert.Single(articles);
         Assert.Equal("https://www.evrensel.net/haber/1/a?utm_source=rss", article.Url);
         Assert.Null(article.PublishedAt); // unreadable date: the page's own date is used
+    }
+
+    [Fact]
+    public void OnlyEvrenselsIsciSendikaSectionIsTaken()
+    {
+        var evrensel = SourceCatalog.All.Single(s => s.Id == "evrensel");
+
+        var (taken, outside) = FeedReader.ReadAll(Fixture(), section: evrensel.FeedSection);
+
+        // The fixture's third item is "İşçi̇-Sendi̇ka", written with stray combining dots.
+        var article = Assert.Single(taken);
+        Assert.Equal(2, outside);
+        Assert.Equal(FeedReader.Read(Fixture())[2].Url, article.Url);
+    }
+
+    [Fact]
+    public void ACategoryAmongSeveralCounts()
+    {
+        var section = new FeedSection("İşçi-Sendika", Categories: ["İşçi-Sendika"]);
+
+        Assert.True(section.Matches(["Güncel,İŞÇİ-SENDİKA"], "https://x/1"));
+        Assert.False(section.Matches(["Güncel", "Ekonomi̇"], "https://x/1"));
+        Assert.False(section.Matches([], "https://x/1"));
+    }
+
+    [Fact]
+    public void OnlyKizilbayraksSinifSectionIsTaken()
+    {
+        var kizilbayrak = SourceCatalog.All.Single(s => s.Id == "kizilbayrak");
+        using var feed = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "Fixtures", "feeds", "kizilbayrak-rss.xml"));
+
+        var (taken, outside) = FeedReader.ReadAll(feed, withText: true, kizilbayrak.FeedSection);
+
+        Assert.Equal("https://kizilbayrak85.net/ana-sayfa/haber/sinif/sokaga-cikma-sirasi-kimde", Assert.Single(taken).Url);
+        Assert.Equal(1, outside); // the Kadın item
+        Assert.True(kizilbayrak.FeedSection!.Matches([], "https://kizilbayrak85.net/ana-sayfa/haber/sinif/sinboda-direnis-suruyor-4"));
+        Assert.False(kizilbayrak.FeedSection.Matches([], "https://kizilbayrak85.net/ana-sayfa/haber/sinifsal-bir-yazi"));
     }
 
     [Theory]

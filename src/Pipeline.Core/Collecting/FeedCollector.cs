@@ -4,8 +4,8 @@ using Pipeline.Core.Submission;
 
 namespace Pipeline.Core.Collecting;
 
-/// <summary>What one run found in a source's feed.</summary>
-public sealed record FeedCollectionResult(string SourceId, int Found, int Accepted, int Duplicate, int Rejected);
+/// <summary>What one run found in a source's feed. Found: items in the source's section; OutsideSection: those left out (B18).</summary>
+public sealed record FeedCollectionResult(string SourceId, int Found, int Accepted, int Duplicate, int Rejected, int OutsideSection = 0);
 
 /// <summary>
 /// Reads a source's feed and submits its articles (origin Collector). Articles already in the ledger come back as
@@ -28,7 +28,7 @@ public sealed class FeedCollector(HttpClient http, ArticleSubmission submission)
             throw new HttpRequestException($"Feed {source.FeedUrl} answered HTTP {(int)response.StatusCode}.", null, response.StatusCode);
         }
         await using var feed = await response.Content.ReadAsStreamAsync(ct);
-        var articles = FeedReader.Read(feed, source.FeedHasFullText);
+        var (articles, outside) = FeedReader.ReadAll(feed, source.FeedHasFullText, source.FeedSection);
 
         var results = new List<SubmissionResult>(articles.Count);
         foreach (var batch in articles.Chunk(ArticleSubmission.MaxBatchSize))
@@ -41,6 +41,7 @@ public sealed class FeedCollector(HttpClient http, ArticleSubmission submission)
             articles.Count,
             results.Count(r => r.Status == SubmissionStatus.Accepted),
             results.Count(r => r.Status == SubmissionStatus.Duplicate),
-            results.Count(r => r.Status == SubmissionStatus.Rejected));
+            results.Count(r => r.Status == SubmissionStatus.Rejected),
+            outside);
     }
 }
