@@ -26,8 +26,8 @@ public class FeedCollectionTests
     {
         var runs = await Collection(BothFeeds).RunAsync();
 
-        Assert.Equal([new FeedRun("evrensel", 3, 3, 0, 0), new FeedRun("kizilbayrak", 2, 2, 0, 0)], runs);
-        Assert.Equal(5, _ledger.Records.Count);
+        Assert.Equal([new FeedRun("evrensel", 1, 1, 0, 0, OutsideSection: 2), new FeedRun("kizilbayrak", 1, 1, 0, 0, OutsideSection: 1)], runs);
+        Assert.Equal(2, _ledger.Records.Count);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class FeedCollectionTests
 
         Assert.Equal("evrensel", runs[0].SourceId);
         Assert.Contains("503", runs[0].Error);
-        Assert.Equal(new FeedRun("kizilbayrak", 2, 2, 0, 0), runs[1]);
+        Assert.Equal(new FeedRun("kizilbayrak", 1, 1, 0, 0, OutsideSection: 1), runs[1]);
     }
 
     [Fact]

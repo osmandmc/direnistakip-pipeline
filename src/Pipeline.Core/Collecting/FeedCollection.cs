@@ -20,7 +20,7 @@ public sealed class FeedCollection(FeedCollector collector)
             try
             {
                 var result = await collector.CollectAsync(source, ct);
-                runs.Add(new FeedRun(source.Id, result.Found, result.Accepted, result.Duplicate, result.Rejected));
+                runs.Add(new FeedRun(source.Id, result.Found, result.Accepted, result.Duplicate, result.Rejected, OutsideSection: result.OutsideSection));
             }
             catch (Exception ex) when (ex is HttpRequestException or FormatException or TaskCanceledException && !ct.IsCancellationRequested)
             {
