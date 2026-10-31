@@ -22,7 +22,7 @@ builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
 
-// HTTP clients for news sites: pages for the Fetch stage, feeds for the collector.
+// HTTP clients for news sites: pages for the Fetch stage, feeds and section pages for the collector.
 builder.Services.AddHttpClient<ArticleFetcher>(NewsHttp.Configure).ConfigurePrimaryHttpMessageHandler(NewsHttp.CreateHandler);
 builder.Services.AddHttpClient<FeedCollector>(NewsHttp.Configure).ConfigurePrimaryHttpMessageHandler(NewsHttp.CreateHandler);
 builder.Services.AddTransient<FeedCollection>();
@@ -35,6 +35,7 @@ builder.Services.AddSingleton<ArticleSubmission>();
 
 // One parser per enabled source.
 builder.Services.AddSingleton<IArticleParser, EvrenselParser>();
+builder.Services.AddSingleton<IArticleParser, SendikaParser>();
 builder.Services.AddSingleton<ArticleParsing>();
 builder.Services.AddSingleton<ArticleReparsing>();
 

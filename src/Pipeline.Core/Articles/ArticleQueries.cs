@@ -45,6 +45,6 @@ public sealed class ArticleQueries(ILedgerStore ledger, IParsedStore parsed)
         return new ArticleDetail(
             record.Id, record.SourceId, record.Origin, record.Url,
             record.Title ?? text?.Title, record.PublishedAt ?? text?.PublishedAt, record.Stages,
-            text?.Body, text?.ParserVersion, record.Outcome);
+            text?.Body, text?.ParserVersion, record.Outcome, text?.ImageUrl);
     }
 }

@@ -70,7 +70,7 @@ public class ArticleSubmissionTests
     [InlineData("", "Not an absolute http(s) URL")]
     [InlineData("https://example.org/news/1", "Unknown source")]
     [InlineData("https://www.birgun.net/haber/x-1", "Source 'birgun' is not enabled yet")]
-    [InlineData("https://sendika63.org/2026/10/x", "Source 'sendika' is not enabled yet")]
+    [InlineData("https://birgun.net/haber/x-1", "Source 'birgun' is not enabled yet")]
     public async Task RejectedArticlesLeaveNoTrace(string url, string reason)
     {
         var result = Assert.Single((await Submit(articles: new ArticleToSubmit(url))).Results);

@@ -18,8 +18,8 @@ public sealed partial class EvrenselParser : IArticleParser
 
     public string SourceId => "evrensel";
 
-    // evrensel-2: the articleBody layout, and text inside plain wrapper divs (2026-10-21).
-    public string Version => "evrensel-2";
+    // evrensel-2: the articleBody layout, and text inside plain wrapper divs (2026-10-21). evrensel-3: the picture (og:image).
+    public string Version => "evrensel-3";
 
     public ParseResult Parse(string html)
     {
@@ -31,8 +31,8 @@ public sealed partial class EvrenselParser : IArticleParser
         }
 
         // og:title carries a " - Evrensel" suffix; the page heading does not.
-        var title = Clean(article.QuerySelector("h1.articleTitle")?.TextContent)
-            ?? StripSiteSuffix(Clean(document.QuerySelector("meta[property='og:title']")?.GetAttribute("content")));
+        var title = HtmlParagraphs.Clean(article.QuerySelector("h1.articleTitle")?.TextContent)
+            ?? StripSiteSuffix(HtmlParagraphs.Clean(document.QuerySelector("meta[property='og:title']")?.GetAttribute("content")));
         if (title is null)
         {
             return ParseResult.Failed("No title found");
@@ -45,7 +45,7 @@ public sealed partial class EvrenselParser : IArticleParser
         }
 
         // The lead (spot) is a one-sentence summary that often names the company and numbers.
-        var lead = Clean(article.QuerySelector("h2.article-spot")?.TextContent);
+        var lead = HtmlParagraphs.Clean(article.QuerySelector("h2.article-spot")?.TextContent);
         if (lead is not null)
         {
             paragraphs.Insert(0, lead);
@@ -54,48 +54,19 @@ public sealed partial class EvrenselParser : IArticleParser
         var publishedAt = ParseDate(document.QuerySelector("meta[name='article:published_time']")?.GetAttribute("content"))
             ?? JsonLdDatePublished(document);
 
-        return ParseResult.Success(title, publishedAt, string.Join("\n\n", paragraphs));
+        return ParseResult.Success(title, publishedAt, string.Join("\n\n", paragraphs), HtmlParagraphs.OgImage(document));
     }
 
-    // Paragraphs of the text container, in order. Divs with a class hold ads and the subscription box and are skipped;
-    // plain divs (no class) only wrap text, e.g. a box pasted from Word, and are read through.
+    // Paragraphs of the text container, in order (ads and the subscription box are divs with a class, skipped).
     private static List<string> BodyParagraphs(IElement article)
     {
         var paragraphs = new List<string>();
         var content = article.QuerySelector("div.news-content") ?? article.QuerySelector("[property='articleBody']");
         if (content is not null)
         {
-            AddParagraphs(content, paragraphs);
+            HtmlParagraphs.Add(content, paragraphs);
         }
         return paragraphs;
-    }
-
-    private static void AddParagraphs(IElement container, List<string> paragraphs)
-    {
-        foreach (var element in container.Children)
-        {
-            switch (element.LocalName)
-            {
-                case "p" or "h2" or "h3" or "h4" or "blockquote":
-                    if (Clean(element.TextContent) is { } text)
-                    {
-                        paragraphs.Add(text);
-                    }
-                    break;
-                case "ul" or "ol":
-                    foreach (var item in element.Children.Where(c => c.LocalName == "li"))
-                    {
-                        if (Clean(item.TextContent) is { } itemText)
-                        {
-                            paragraphs.Add("- " + itemText);
-                        }
-                    }
-                    break;
-                case "div" when !element.HasAttribute("class") && !element.HasAttribute("id"):
-                    AddParagraphs(element, paragraphs);
-                    break;
-            }
-        }
     }
 
     private static DateTimeOffset? JsonLdDatePublished(IDocument document)
@@ -141,22 +112,9 @@ public sealed partial class EvrenselParser : IArticleParser
     private static string? StripSiteSuffix(string? title) =>
         title is null ? null : SiteSuffix().Replace(title, "") is { Length: > 0 } stripped ? stripped : null;
 
-    private static string? Clean(string? text)
-    {
-        if (text is null)
-        {
-            return null;
-        }
-        var cleaned = Whitespace().Replace(text.Replace(' ', ' '), " ").Trim();
-        return cleaned.Length == 0 ? null : cleaned;
-    }
-
     [GeneratedRegex(@"(Z|[+-]\d{2}:?\d{2})$")]
     private static partial Regex HasOffset();
 
     [GeneratedRegex(@"\s+[-–|]\s+Evrensel\s*$")]
     private static partial Regex SiteSuffix();
-
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex Whitespace();
 }

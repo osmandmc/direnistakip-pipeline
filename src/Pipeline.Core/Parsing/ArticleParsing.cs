@@ -74,7 +74,7 @@ public sealed class ArticleParsing(
         var now = clock.GetUtcNow();
         var parsedArticle = new ParsedArticle(
             Guid.NewGuid().ToString("N"), article.ArticleId, article.SourceId, parser.Version, now,
-            article.RawHtmlPath, result.Title, result.PublishedAt, result.Body!);
+            article.RawHtmlPath, result.Title, result.PublishedAt, result.Body!, result.ImageUrl);
 
         await parsed.SaveAsync(parsedArticle, ct);
         await ledger.SetSummaryAsync(article.ArticleId, result.Title, result.PublishedAt, ct);
