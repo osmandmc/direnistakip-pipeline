@@ -34,12 +34,13 @@ public static class SourceCatalog
         new("sendika", "Sendika.org", ["sendika.org"], Enabled: true,
             SectionPage: new SectionPage("Emek-Sermaye", "https://sendika.org/category/emek-sermaye", ".widgetContent a[href]", @"^/\d{4}/\d{2}/[^/]+-\d+/?$")),
         // Kızılbayrak's feed (≈ 50 items, about 3 days) carries the whole text, checked against the pages on 2026-10-20, so
-        // its articles need no page parser. The old host over HTTP redirects to the current mirror domain (HTTPS to it
-        // fails); article links on mirrors map to kizilbayrak.net (UrlCanonicalizer). Pasted links still go to Fetch and
-        // fail at Parse ("No parser"), unless the feed already brought them.
+        // its articles need no page parser. The feed moved to the mirror kizilbayrak85.net (the user, 2026-10-31); the old
+        // host over HTTP (http://www.kizilbayrak.net/rss) still redirects to the current mirror and is the fallback if the
+        // site moves to another numbered domain. Article links on mirrors map to kizilbayrak.net (UrlCanonicalizer). Pasted
+        // links still go to Fetch and fail at Parse ("No parser"), unless the feed already brought them.
         // Only its Sınıf section is taken (B18): the feed has no categories, the links say the section (/haber/sinif/…).
         new("kizilbayrak", "Kızılbayrak", ["kizilbayrak.net"], Enabled: true,
-            FeedUrl: "http://www.kizilbayrak.net/rss", FeedHasFullText: true, FeedSection: new FeedSection("Sınıf", PathSegment: "sinif")),
+            FeedUrl: "https://kizilbayrak85.net/rss", FeedHasFullText: true, FeedSection: new FeedSection("Sınıf", PathSegment: "sinif")),
         new("birgun", "BirGün", ["birgun.net"]),
     ];
 
