@@ -8,7 +8,8 @@ public class ArticleParsingTests
 {
     private const string ArticleId = "a1";
     private const string GoodHtml = """
-        <html><body><article><h1 class="articleTitle">Başlık</h1>
+        <html><head><meta property="og:image" content="https://www.evrensel.net/images/1280/upload/dosya/1.jpg"></head>
+        <body><article><h1 class="articleTitle">Başlık</h1>
         <div class="news-content"><p>Birinci paragraf.</p></div></article></body></html>
         """;
 
@@ -50,6 +51,7 @@ public class ArticleParsingTests
         Assert.Equal(fetched.RawHtmlPath, saved.RawHtmlPath);
         Assert.Equal("Başlık", saved.Title);
         Assert.Equal("Birinci paragraf.", saved.Body);
+        Assert.Equal("https://www.evrensel.net/images/1280/upload/dosya/1.jpg", saved.ImageUrl);
 
         Assert.Equal(StageStatus.Succeeded, Parsed.Status);
         Assert.Equal(new EvrenselParser().Version, Parsed.Version);

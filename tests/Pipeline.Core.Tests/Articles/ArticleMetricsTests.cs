@@ -72,9 +72,9 @@ public class ArticleMetricsTests
         var result = await _metrics.GetAsync(7);
 
         // Every enabled source is listed, with a zero row per day.
-        Assert.Equal(["evrensel", "kizilbayrak"], result.Sources.Select(s => s.SourceId));
+        Assert.Equal(["evrensel", "kizilbayrak", "sendika"], result.Sources.Select(s => s.SourceId));
         Assert.All(result.Sources, s => Assert.Equal((null, 0), (s.LastReceivedAt, s.Received)));
-        Assert.Equal(7 * 2, result.Days.Count);
+        Assert.Equal(7 * 3, result.Days.Count);
     }
 
     private void Judge(string id, string verdict, DateTimeOffset at, bool drafted = false)

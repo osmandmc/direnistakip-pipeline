@@ -11,13 +11,16 @@ public interface IArticleParser
     ParseResult Parse(string html);
 }
 
-/// <summary>Either the extracted fields, or the reason nothing usable was found.</summary>
-public sealed record ParseResult(string? Title, DateTimeOffset? PublishedAt, string? Body, string? Failure)
+/// <summary>
+/// Either the extracted fields, or the reason nothing usable was found. ImageUrl: the article's main picture on the
+/// source's site (its og:image), shown by the app from there; null when the page names none.
+/// </summary>
+public sealed record ParseResult(string? Title, DateTimeOffset? PublishedAt, string? Body, string? Failure, string? ImageUrl = null)
 {
     public bool Succeeded => Failure is null;
 
-    public static ParseResult Success(string title, DateTimeOffset? publishedAt, string body) =>
-        new(title, publishedAt, body, null);
+    public static ParseResult Success(string title, DateTimeOffset? publishedAt, string body, string? imageUrl = null) =>
+        new(title, publishedAt, body, null, imageUrl);
 
     public static ParseResult Failed(string reason) => new(null, null, null, reason);
 }

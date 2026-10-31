@@ -253,7 +253,7 @@ Suggested case action (D-012): new resistance + protest · new protest on existi
 
 ### 4.3 Collection — Discover
 
-Evrensel since E7, Kızılbayrak since S2: one timer (`CollectFeeds`, every two hours at :05) reads the RSS feed of each enabled source that has one (`SourceCatalog`) and submits its links through the same path as `POST /articles`. Kızılbayrak's feed carries the whole text, so its articles enter already parsed (like CSV rows) and its pages are never downloaded. Evrensel's feed holds about 100 articles (≈ 14 hours), so a missed run loses nothing; known links come back as duplicates. Switched on by the app setting `FeedCollection__Enabled` (infra parameter `feedCollectionEnabled`, off by default). Sources without a usable feed would read listing pages instead (phase 5).
+Evrensel since E7, Kızılbayrak since S2, Sendika.org since S1: one timer (`CollectFeeds`, every two hours at :05) reads the RSS feed of each enabled source that has one (`SourceCatalog`), or its section page when it has none, and submits its links through the same path as `POST /articles`. Kızılbayrak's feed carries the whole text, so its articles enter already parsed (like CSV rows) and its pages are never downloaded. Evrensel's feed holds about 100 articles (≈ 14 hours), so a missed run loses nothing; known links come back as duplicates. Switched on by the app setting `FeedCollection__Enabled` (infra parameter `feedCollectionEnabled`, off by default). Sendika.org has no feed: its Emek-Sermaye section page (`SectionPage`, first page only, since robots.txt disallows `?page=`) lists the newest 12 articles, about a day's worth; their links go to Fetch and the Sendika parser like any submitted link.
 
 ```mermaid
 sequenceDiagram

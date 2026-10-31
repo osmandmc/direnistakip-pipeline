@@ -19,6 +19,7 @@ public class EvrenselParserTests
         Assert.True(result.Succeeded, result.Failure);
         Assert.Equal("Korteks'te iş kazası: İşçinin üç parmağı silindire sıkıştı", result.Title);
         Assert.Equal(new DateTimeOffset(2026, 10, 18, 22, 12, 0, Turkey), result.PublishedAt);
+        Assert.Equal("https://www.evrensel.net/images/1280/upload/dosya/357127.jpg", result.ImageUrl);
 
         var paragraphs = result.Body!.Split("\n\n");
         Assert.StartsWith("Zorlu Holding’in sahibi olduğu Korteks’te", paragraphs[0]); // the lead comes first

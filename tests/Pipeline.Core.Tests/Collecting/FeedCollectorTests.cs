@@ -43,6 +43,42 @@ public class FeedCollectorTests
     }
 
     [Fact]
+    public async Task ASourceWithoutAFeedIsCollectedFromItsSectionPage()
+    {
+        var sendika = SourceCatalog.All.Single(s => s.Id == "sendika");
+        var requested = new List<Uri?>();
+        var collector = Collector(request =>
+        {
+            requested.Add(request.RequestUri);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "sendika", "emek-sermaye.html"))),
+            };
+        });
+
+        var first = await collector.CollectAsync(sendika);
+        var second = await collector.CollectAsync(sendika);
+
+        Assert.Equal(new FeedCollectionResult("sendika", 2, 2, 0, 0), first);
+        Assert.Equal(new FeedCollectionResult("sendika", 2, 0, 2, 0), second);
+        Assert.Equal(new Uri("https://sendika.org/category/emek-sermaye"), requested[0]);
+        // Queued for Fetch: the page is downloaded and parsed like any article.
+        var message = Assert.IsType<ArticleSubmitted>(_queue.Sent[0].Message);
+        Assert.Equal(("sendika", "Örnek Tekstil işçileri üçüncü gününde"), (message.SourceId, message.Title));
+        Assert.Equal(2, _queue.Sent.Count);
+    }
+
+    [Fact]
+    public async Task ASectionPageThatCannotBeDownloadedThrows()
+    {
+        var collector = Collector(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
+
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() => collector.CollectAsync(SourceCatalog.All.Single(s => s.Id == "sendika")));
+
+        Assert.StartsWith("Section page https://sendika.org/category/emek-sermaye answered HTTP 404", error.Message);
+    }
+
+    [Fact]
     public async Task AFeedThatCannotBeDownloadedThrows()
     {
         var collector = Collector(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));

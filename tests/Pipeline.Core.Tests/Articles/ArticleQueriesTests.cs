@@ -19,7 +19,8 @@ public class ArticleQueriesTests
         if (parsed)
         {
             stages[Stage.Parsed] = new(StageStatus.Succeeded, publishedAt, "evrensel-1");
-            _parsed.Saved.Add(new ParsedArticle($"p-{id}", id, "evrensel", "evrensel-1", publishedAt, null, $"Başlık {id}", publishedAt, $"Metin {id}"));
+            _parsed.Saved.Add(new ParsedArticle($"p-{id}", id, "evrensel", "evrensel-1", publishedAt, null, $"Başlık {id}", publishedAt, $"Metin {id}",
+                $"https://www.evrensel.net/images/{id}.jpg"));
         }
         _ledger.Records[id] = new LedgerRecord(
             id, "evrensel", ArticleOrigin.Csv, $"https://www.evrensel.net/haber/{id}", stages,
@@ -37,6 +38,7 @@ public class ArticleQueriesTests
         Assert.Equal("Başlık a1", detail.Title);
         Assert.Equal("Metin a1", detail.Body);
         Assert.Equal("evrensel-1", detail.ParserVersion);
+        Assert.Equal("https://www.evrensel.net/images/a1.jpg", detail.ImageUrl);
         Assert.Contains(Stage.Parsed, detail.Stages.Keys);
     }
 

@@ -17,7 +17,7 @@ public sealed record ArticleSummary(
 /// </summary>
 public sealed record ArticleListResponse(IReadOnlyList<ArticleSummary> Items, string? Next);
 
-/// <summary><c>GET /articles/{id}</c>: one article with its latest text (null until it is parsed).</summary>
+/// <summary><c>GET /articles/{id}</c>: one article with its latest text (null until it is parsed) and picture address.</summary>
 public sealed record ArticleDetail(
     string ArticleId,
     string SourceId,
@@ -28,7 +28,8 @@ public sealed record ArticleDetail(
     IReadOnlyDictionary<Stage, StageResult> Stages,
     string? Body,
     string? ParserVersion,
-    ArticleOutcome? Outcome = null);
+    ArticleOutcome? Outcome = null,
+    string? ImageUrl = null);
 
 /// <summary>
 /// <c>POST /articles/reparse</c>: articles parsed again from their stored pages. More: there were more than one run
