@@ -36,6 +36,7 @@ builder.Services.AddSingleton<ArticleSubmission>();
 // One parser per enabled source.
 builder.Services.AddSingleton<IArticleParser, EvrenselParser>();
 builder.Services.AddSingleton<IArticleParser, SendikaParser>();
+builder.Services.AddSingleton<IArticleParser, KizilbayrakParser>();
 builder.Services.AddSingleton<ArticleParsing>();
 builder.Services.AddSingleton<ArticleReparsing>();
 

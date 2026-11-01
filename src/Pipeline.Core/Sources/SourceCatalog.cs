@@ -37,7 +37,7 @@ public static class SourceCatalog
         // its articles need no page parser. The feed moved to the mirror kizilbayrak85.net (the user, 2026-10-31); the old
         // host over HTTP (http://www.kizilbayrak.net/rss) still redirects to the current mirror and is the fallback if the
         // site moves to another numbered domain. Article links on mirrors map to kizilbayrak.net (UrlCanonicalizer). Pasted
-        // links still go to Fetch and fail at Parse ("No parser"), unless the feed already brought them.
+        // links (e.g. older articles the feed no longer holds) go to Fetch and KizilbayrakParser (2026-11-01).
         // Only its Sınıf section is taken (B18): the feed has no categories, the links say the section (/haber/sinif/…).
         new("kizilbayrak", "Kızılbayrak", ["kizilbayrak.net"], Enabled: true,
             FeedUrl: "https://kizilbayrak85.net/rss", FeedHasFullText: true, FeedSection: new FeedSection("Sınıf", PathSegment: "sinif")),
