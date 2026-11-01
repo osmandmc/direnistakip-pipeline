@@ -1,5 +1,7 @@
 # Tasks
 
+**Open tasks are tracked in the private repo [direnistakip-tasks](https://github.com/osmandmc/direnistakip-tasks/issues) and its [board](https://github.com/users/osmandmc/projects/1) (since 2026-11-01), one issue per task with its old id.** This file keeps the history and the notes of finished tasks.
+
 Implemented one at a time, each after approval. **You** = needs your action or access; otherwise Claude implements and you review.
 
 Status: ☐ open · ◐ in progress · ☑ done
