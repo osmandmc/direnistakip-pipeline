@@ -198,6 +198,16 @@ App-side changes (review screen, `ArticleReview`, outcome call) live in the app'
 Environments: `prod` only to start; add `dev` when changes need a safe place to land.
 **Rejected.** Azure DevOps (second platform to maintain).
 
+## D-029 — The pipeline owns the prompts; the app chooses (2026-11-06)
+**Decision.** Each prompt has one copy: the pipeline's file in `docs/extraction` (the built-in version) plus the versions
+saved through the app's "AI istemleri" page (B17). The app keeps no copy: its "AI ile doldur" button asks the pipeline for
+the prompt that runs now. A new prompt version is written in the pipeline's file and deployed with the pipeline; the page
+is for choosing a version, trying it, and drafting older articles again (`POST /api/articles/draft?again=true`).
+**Why.** The pipeline runs the extraction prompt for every relevant article; researchers copy it only in exceptions. By
+2026-11-06 three copies had drifted apart: the app's file (v2.6), the pipeline's file (v2.1) and the active version
+(`prompt-v2.1-e2` = v2.3), which both the copy button and the drafts used.
+**Rejected.** The prompt in the app, sent to the pipeline like the lists (R45): a second store of versions to keep in step.
+
 ---
 
 ## Open decisions (deferred)

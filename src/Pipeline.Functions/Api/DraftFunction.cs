@@ -11,7 +11,8 @@ namespace Pipeline.Functions.Api;
 /// <summary>
 /// AI drafts (B12). Requires a function key (D-025).
 /// <c>GET /api/articles/{id}/draft</c>: the article's latest draft (404 when none).
-/// <c>POST /api/articles/draft?source=evrensel</c>: queues open articles judged relevant or uncertain without a draft.
+/// <c>POST /api/articles/draft?source=evrensel</c>: queues open articles judged relevant or uncertain without a draft;
+/// <c>&amp;again=true</c> instead queues those drafted by an older extraction prompt, to be drafted with the current one (D-029).
 /// </summary>
 public sealed class DraftFunction(IDraftStore drafts, ArticleDrafting drafting)
 {
@@ -34,6 +35,7 @@ public sealed class DraftFunction(IDraftStore drafts, ArticleDrafting drafting)
         {
             return new BadRequestObjectResult(new { error = $"'source' is one of: {string.Join(", ", SourceCatalog.All.Where(s => s.Enabled).Select(s => s.Id))}" });
         }
-        return new OkObjectResult(await drafting.RunAsync(source, ct));
+        var again = bool.TryParse(req.Query["again"].FirstOrDefault(), out var a) && a;
+        return new OkObjectResult(await drafting.RunAsync(source, again, ct));
     }
 }
