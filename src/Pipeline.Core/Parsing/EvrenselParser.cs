@@ -7,7 +7,7 @@ using AngleSharp.Html.Parser;
 namespace Pipeline.Core.Parsing;
 
 /// <summary>
-/// Evrensel article pages (structure checked on 2026-10-18; docs/spikes/t4-fetch-spike.md; second layout 2026-10-21).
+/// Evrensel article pages (structure checked on 2026-10-18; second layout 2026-10-21).
 /// Pages pre-load other stories further down that reuse the same class names, so every rule
 /// is scoped to the first &lt;article&gt; element. Two layouts: news in <c>div.news-content</c>; explainer and service
 /// pages ("… ne zaman", "… nasıl yapılır") in <c>[property=articleBody]</c>, whose HTML holds only the introduction.
