@@ -17,7 +17,7 @@ public sealed record Source(
 
 /// <summary>
 /// Known news sources. Hosts are canonical (no www./m. prefix; numbered mirror domains
-/// are mapped by UrlCanonicalizer). Findings per source: docs/spikes/t4-fetch-spike.md.
+/// are mapped by UrlCanonicalizer).
 /// </summary>
 public static class SourceCatalog
 {
