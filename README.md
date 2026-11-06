@@ -1,6 +1,8 @@
 # direnistakip-pipeline
 
-Collects labour news articles and pre-fills case drafts for review in the direnistakip app. Design and rationale: [decisions.md](decisions.md).
+Collects labour news articles and pre-fills case drafts for review in the direnistakip app. Design and rationale: [decisions.md](decisions.md). Open tasks: issues in the private repo
+[direnistakip-tasks](https://github.com/osmandmc/direnistakip-tasks/issues); the old task list is
+[`tasks.md` at 8b847a3](https://github.com/osmandmc/direnistakip-pipeline/blob/8b847a3/tasks.md).
 
 ## Layout
 
