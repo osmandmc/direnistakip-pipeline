@@ -27,7 +27,9 @@ public sealed class DraftExtraction(
     public async Task<AssessOutcome> HandleAsync(ArticleRelevant message, CancellationToken ct = default)
     {
         var record = await ledger.GetAsync(message.ArticleId, ct);
-        if (record is null || IsDone(record) || record.Outcome is not null)
+        var prompt = prompts is null ? ActivePrompts.Builtin(ActivePrompts.Extraction) : await prompts.GetAsync(ActivePrompts.Extraction, ct);
+        // Drafted already, unless asked again and drafted by an older prompt (delivered twice: the second finds it current).
+        if (record is null || record.Outcome is not null || (IsDone(record) && !(message.Redraft && ExtractionPrompt.IsOlder(record, prompt.Version))))
         {
             return AssessOutcome.NotRun;
         }
@@ -38,7 +40,6 @@ public sealed class DraftExtraction(
 
         ModelAnswer answer;
         ListsSnapshot? lists = null;
-        var prompt = prompts is null ? ActivePrompts.Builtin(ActivePrompts.Extraction) : await prompts.GetAsync(ActivePrompts.Extraction, ct);
         try
         {
             lists = listStore is null ? null : await listStore.GetLatestAsync(ct);

@@ -1,4 +1,5 @@
 using Pipeline.Contracts;
+using Pipeline.Core.Prompts;
 using Pipeline.Core.Relevance;
 using Pipeline.Core.Storage;
 
@@ -9,7 +10,7 @@ namespace Pipeline.Core.Extraction;
 /// assessed before the Extract stage existed, or whose drafting failed. Spaced for the model's per-minute limit; newest
 /// first, at most <see cref="MaxPerRun"/> per call.
 /// </summary>
-public sealed class ArticleDrafting(ILedgerStore ledger, ILanguageModel model, IQueueSender queue)
+public sealed class ArticleDrafting(ILedgerStore ledger, ILanguageModel model, IQueueSender queue, ActivePrompts? prompts = null)
 {
     public const int MaxPerRun = 100;
 
@@ -18,13 +19,18 @@ public sealed class ArticleDrafting(ILedgerStore ledger, ILanguageModel model, I
 
     private const int PageSize = 100;
 
-    public async Task<DraftQueueResponse> RunAsync(string sourceId, CancellationToken ct = default)
+    /// <param name="again">
+    /// Instead of articles without a draft: articles drafted by an older version of the extraction prompt, drafted again
+    /// with the current one (D-029). Earlier drafts are kept; the app shows the latest.
+    /// </param>
+    public async Task<DraftQueueResponse> RunAsync(string sourceId, bool again = false, CancellationToken ct = default)
     {
         if (!model.IsConfigured)
         {
             return new DraftQueueResponse(0, (int)Spacing.TotalSeconds, false, false);
         }
 
+        var current = prompts is null ? ExtractionPrompt.Version : (await prompts.GetAsync(ActivePrompts.Extraction, ct)).Version;
         var query = new LedgerQuery(sourceId, Status: ArticleStatusFilter.Parsed, Outcome: OutcomeFilter.Open, Relevance: RelevanceFilter.Other);
         var queued = 0;
         var more = false;
@@ -32,7 +38,7 @@ public sealed class ArticleDrafting(ILedgerStore ledger, ILanguageModel model, I
         do
         {
             var page = await ledger.QueryAsync(query, PageSize, next, ct);
-            foreach (var record in page.Items.Where(r => !DraftExtraction.IsDone(r)))
+            foreach (var record in page.Items.Where(r => again ? ExtractionPrompt.IsOlder(r, current) : !DraftExtraction.IsDone(r)))
             {
                 if (!record.Stages.TryGetValue(Stage.Relevance, out var relevance)
                     || !Enum.TryParse<RelevanceVerdict>(relevance.Answer, out var verdict) || verdict == RelevanceVerdict.NotRelevant)
@@ -44,7 +50,7 @@ public sealed class ArticleDrafting(ILedgerStore ledger, ILanguageModel model, I
                     more = true;
                     break;
                 }
-                await queue.SendLaterAsync(QueueNames.ArticleRelevant, new ArticleRelevant(record.Id, record.SourceId, verdict, relevance.At), Spacing * queued, ct);
+                await queue.SendLaterAsync(QueueNames.ArticleRelevant, new ArticleRelevant(record.Id, record.SourceId, verdict, relevance.At, Redraft: again), Spacing * queued, ct);
                 queued++;
             }
             next = page.Next;

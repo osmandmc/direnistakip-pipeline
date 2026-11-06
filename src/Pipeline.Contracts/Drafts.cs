@@ -1,7 +1,10 @@
 namespace Pipeline.Contracts;
 
-/// <summary>Sent by the Relevance stage for articles judged relevant or uncertain: the Extract stage drafts them (B12).</summary>
-public sealed record ArticleRelevant(string ArticleId, string SourceId, RelevanceVerdict Verdict, DateTimeOffset AssessedAt);
+/// <summary>
+/// Sent by the Relevance stage for articles judged relevant or uncertain: the Extract stage drafts them (B12). Redraft:
+/// sent again on request, so an article drafted by an older extraction prompt is drafted with the current one.
+/// </summary>
+public sealed record ArticleRelevant(string ArticleId, string SourceId, RelevanceVerdict Verdict, DateTimeOffset AssessedAt, bool Redraft = false);
 
 /// <summary>
 /// One AI draft of the case form (D-003, B12): one record per run, never overwritten. <see cref="Answer"/> is the model's
@@ -23,6 +26,7 @@ public sealed record DraftResponse(string ArticleId, string Version, string Answ
 
 /// <summary>
 /// <c>POST /articles/draft</c> (B12): open articles judged relevant or uncertain but without a draft, queued for the
-/// Extract stage <c>SpacingSeconds</c> apart. More: call again once these are done.
+/// Extract stage <c>SpacingSeconds</c> apart; with <c>again=true</c>, those drafted by an older prompt instead. More:
+/// call again once these are done.
 /// </summary>
 public sealed record DraftQueueResponse(int Queued, int SpacingSeconds, bool More, bool ModelConfigured);

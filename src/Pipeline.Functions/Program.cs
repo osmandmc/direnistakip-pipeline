@@ -77,7 +77,7 @@ builder.Services.AddSingleton<ListsUpdate>();
 builder.Services.AddSingleton(sp => new ArticleMetrics(
     sp.GetRequiredService<ILedgerStore>(), sp.GetRequiredService<TimeProvider>(), Model(sp, relevanceModel), sp.GetRequiredService<ActivePrompts>()));
 builder.Services.AddTransient(sp => new ArticleDrafting(
-    sp.GetRequiredService<ILedgerStore>(), Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>()));
+    sp.GetRequiredService<ILedgerStore>(), Model(sp, extractionModel), sp.GetRequiredService<IQueueSender>(), sp.GetRequiredService<ActivePrompts>()));
 
 // Read API (D-009).
 builder.Services.AddSingleton<ArticleQueries>();

@@ -170,3 +170,9 @@ words exactly as written (no list values, the date's wording rather than the dat
 drafts: 7 quotes per draft instead of 2; 93 of 105 found in the article's title or text after ignoring case, spacing and
 quote marks (89%). The rest are paraphrases; the app marks them "bulunamadı".
 
+## Prompt v2.6, the only copy (2026-11-06)
+
+The app's copy (`AiPrompt.md`) had moved on from v2.1 to v2.6 while the pipeline still had v2.1: three categories and
+their rules (R31), İşveren Durumu and İşyeri (R37, Doğrudan / Taşeron since the merge of Yüklenici and İşletmeci) and Vaka
+İsmi (`case.name`). v2.6 is now `prompt.md`, version `prompt-v2.6`, and the app's copy is gone (D-029). Open articles
+drafted by an older version are drafted again with `again=true`.

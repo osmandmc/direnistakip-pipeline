@@ -78,7 +78,8 @@ public class DraftExtractionTests
 
     private static ScriptedModel Answers(string json) => new(_ => new ModelAnswer(json, "gemini-3-flash"));
 
-    private ArticleRelevant Add(string id, string? relevance = "Relevant", ArticleOutcome? outcome = null, bool drafted = false)
+    private ArticleRelevant Add(string id, string? relevance = "Relevant", ArticleOutcome? outcome = null, bool drafted = false,
+        string draftVersion = "prompt-v2 · lists 2026-10-21 · gemini", string draftAnswer = ExtractionAnswers.Draft)
     {
         var stages = new Dictionary<Stage, StageResult> { [Stage.Parsed] = new(StageStatus.Succeeded, At, "evrensel-2") };
         if (relevance is not null)
@@ -87,7 +88,7 @@ public class DraftExtractionTests
         }
         if (drafted)
         {
-            stages[Stage.Extracted] = new(StageStatus.Succeeded, At, "prompt-v2", "…", ExtractionAnswers.Draft);
+            stages[Stage.Extracted] = new(StageStatus.Succeeded, At, draftVersion, "…", draftAnswer);
         }
         _ledger.Records[id] = new LedgerRecord(id, "evrensel", ArticleOrigin.Collector, $"https://www.evrensel.net/haber/{id}", stages, outcome, "Başlık", At, TurkeyTime.Normalize(At));
         _parsed.Saved.Add(new ParsedArticle("p-" + id, id, "evrensel", "evrensel-2", At, null, "Başlık", At, "Metin."));
@@ -170,5 +171,39 @@ public class DraftExtractionTests
 
         Assert.Equal(new DraftQueueResponse(2, 10, false, true), result);
         Assert.Equal(["relevant", "uncertain"], _queue.SentLater.Select(s => ((ArticleRelevant)s.Message!).ArticleId).Order());
+    }
+
+    [Fact]
+    public async Task AskedAgainOnlyADraftByAnOlderPromptIsDraftedAgain()
+    {
+        var model = Answers("""{"relevant": true, "case": {"company": "Örnek Metal"}}""");
+        var older = Add("older", drafted: true) with { Redraft = true };
+        var current = Add("current", drafted: true, draftVersion: $"{ExtractionPrompt.Version} · lists 2026-11-06 · gemini") with { Redraft = true };
+
+        Assert.Equal(AssessOutcome.Assessed, await Extraction(model).HandleAsync(older));
+        Assert.Equal(AssessOutcome.NotRun, await Extraction(model).HandleAsync(current));
+        Assert.Equal(AssessOutcome.NotRun, await Extraction(model).HandleAsync(older)); // delivered twice: now current
+
+        Assert.Equal("older", Assert.Single(_drafts.Saved).ArticleId);
+        Assert.StartsWith(ExtractionPrompt.Version + " ", _ledger.Records["older"].Stages[Stage.Extracted].Version);
+    }
+
+    [Fact]
+    public async Task AgainQueuesOpenArticlesDraftedByAnOlderPrompt()
+    {
+        Add("older-draft", drafted: true);
+        Add("older-no-event", drafted: true, draftVersion: "prompt-v2.1-e2 · lists 2026-11-01 · gemini", draftAnswer: ExtractionAnswers.NoEvent);
+        Add("edited-on-current", drafted: true, draftVersion: $"{ExtractionPrompt.Version}-e1 · lists 2026-11-06 · gemini");
+        Add("current", drafted: true, draftVersion: $"{ExtractionPrompt.Version} · lists 2026-11-06 · gemini");
+        Add("handled", drafted: true, outcome: new ArticleOutcome(OutcomeKind.Dismissed, At));
+        Add("rejected-since", "NotRelevant", drafted: true);
+        Add("not-drafted");
+
+        var result = await new ArticleDrafting(_ledger, Answers("{}"), _queue).RunAsync("evrensel", again: true);
+
+        Assert.Equal(new DraftQueueResponse(3, 10, false, true), result);
+        var sent = _queue.SentLater.Select(s => (ArticleRelevant)s.Message!).ToList();
+        Assert.Equal(["edited-on-current", "older-draft", "older-no-event"], sent.Select(m => m.ArticleId).Order());
+        Assert.All(sent, m => Assert.True(m.Redraft));
     }
 }

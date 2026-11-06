@@ -16,14 +16,14 @@ public static class ExtractionAnswers
 }
 
 /// <summary>
-/// The extraction prompt (docs/extraction/prompt.md, the one researchers can also copy in the app) filled with one
+/// The extraction prompt (docs/extraction/prompt.md: the only copy, D-029; the app's copy button asks the pipeline for it) filled with one
 /// article and the list values (docs/extraction/lists.json, a snapshot of the app's lists), and the reading of the
 /// model's answer: only what the pipeline needs; the app checks the answer field by field.
 /// </summary>
 public static class ExtractionPrompt
 {
-    /// <summary>The prompt file is prompt v2 (docs/extraction/findings.md); change this with every change to the file.</summary>
-    public const string Version = "prompt-v2.1";
+    /// <summary>The prompt file's version (docs/extraction/findings.md); change this with every change to the file.</summary>
+    public const string Version = "prompt-v2.6";
 
     /// <summary>Characters of the body sent: the whole text of nearly every article.</summary>
     public const int TextLength = 15000;
@@ -61,6 +61,14 @@ public static class ExtractionPrompt
     /// <summary>"lists 2026-10-26": which list values a draft was made with, for its version.</summary>
     public static string ListsLabel(ListsSnapshot? lists) =>
         "lists " + (lists?.UpdatedAt ?? SnapshotDate).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Drafted by another prompt than <paramref name="current"/>: the stage's version is "prompt · lists · model", so
+    /// "prompt-v2.1-e2 · lists 2026-11-01 · gemini" is older than "prompt-v2.6". A failed run does not count (it is tried again anyway).
+    /// </summary>
+    public static bool IsOlder(LedgerRecord record, string current = Version) =>
+        record.Stages.TryGetValue(Stage.Extracted, out var stage) && stage.Status == StageStatus.Succeeded
+            && !(stage.Version ?? "").StartsWith(current + " ", StringComparison.Ordinal);
 
     /// <summary>The prompt with its placeholders, as the prompts endpoint shows it (B13); {{LISTS}} holds the list values.</summary>
     public static string TemplateText => Template.Value;

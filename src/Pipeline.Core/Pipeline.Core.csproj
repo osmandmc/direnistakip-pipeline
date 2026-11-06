@@ -9,7 +9,7 @@
   <ItemGroup>
     <!-- The prompts are documents (docs/extraction); the code embeds those files. -->
     <EmbeddedResource Include="..\..\docs\extraction\relevance-prompt.md" LogicalName="relevance-prompt.md" Link="Relevance\relevance-prompt.md" />
-    <!-- The extraction prompt (v2) and the list values it offers (B12). -->
+    <!-- The extraction prompt (the only copy, D-029) and the list values it offers (B12). -->
     <EmbeddedResource Include="..\..\docs\extraction\prompt.md" LogicalName="extraction-prompt.md" Link="Extraction\prompt.md" />
     <EmbeddedResource Include="..\..\docs\extraction\lists.json" LogicalName="extraction-lists.json" Link="Extraction\lists.json" />
   </ItemGroup>
