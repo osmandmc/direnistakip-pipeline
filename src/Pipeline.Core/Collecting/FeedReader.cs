@@ -58,8 +58,10 @@ public static class FeedReader
                 continue;
             }
             var title = item.Element("title")?.Value.Trim();
-            var text = withText ? FeedText.ToParagraphs(item.Element("description")?.Value) : null;
-            articles.Add(new ArticleToSubmit(url, string.IsNullOrEmpty(title) ? null : title, ReadDate(item.Element("pubDate")?.Value), text));
+            var description = withText ? item.Element("description")?.Value : null;
+            var text = FeedText.ToParagraphs(description);
+            articles.Add(new ArticleToSubmit(url, string.IsNullOrEmpty(title) ? null : title, ReadDate(item.Element("pubDate")?.Value), text,
+                text is null ? null : FeedText.FirstImage(description)));
         }
         return (articles, outside);
     }

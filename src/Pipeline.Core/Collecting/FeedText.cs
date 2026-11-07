@@ -12,6 +12,20 @@ public static partial class FeedText
 {
     private static readonly HtmlParser Parser = new();
 
+    /// <summary>
+    /// The first picture in a feed item's text when its address is absolute http(s), else null. Kızılbayrak's items
+    /// carry one, the same file as the page's og:image (checked 2026-11-07).
+    /// </summary>
+    public static string? FirstImage(string? html)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+        {
+            return null;
+        }
+        var src = Parser.ParseDocument($"<body>{html}</body>").QuerySelector("img[src]")?.GetAttribute("src")?.Trim();
+        return Uri.TryCreate(src, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" ? uri.AbsoluteUri : null;
+    }
+
     public static string? ToParagraphs(string? html)
     {
         if (string.IsNullOrWhiteSpace(html))

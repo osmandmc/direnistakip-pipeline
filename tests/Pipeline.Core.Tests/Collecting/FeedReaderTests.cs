@@ -104,12 +104,28 @@ public class FeedReaderTests
         Assert.StartsWith("“Biz kadınların yaşarken korunmasını", paragraphs[2]);
         Assert.DoesNotContain("<", first.Content);
         Assert.StartsWith("Avrupa Gündemi’nde bu hafta", articles[1].Content);
+        // The picture in the item's text is the article's picture (the page's og:image); the second item has none.
+        Assert.Equal("https://kizilbayrak85.net/images/haber/kadin-adalet-ve-hafiza-nobeti-suruyor.jpg", first.ImageUrl);
+        Assert.Null(articles[1].ImageUrl);
     }
 
     [Fact]
     public void WithoutTextOnlyTheLinkTitleAndDate() =>
         Assert.All(FeedReader.Read(File.OpenRead(Path.Combine(AppContext.BaseDirectory, "Fixtures", "feeds", "kizilbayrak-rss.xml"))),
-            a => Assert.Null(a.Content));
+            a =>
+            {
+                Assert.Null(a.Content);
+                Assert.Null(a.ImageUrl);
+            });
+
+    [Theory]
+    [InlineData("<p>Metin</p><img src=\"https://site.net/a.jpg\" /><img src=\"https://site.net/b.jpg\" />", "https://site.net/a.jpg")]
+    [InlineData("<img src=\" https://site.net/a.jpg \" />", "https://site.net/a.jpg")]
+    [InlineData("<img src=\"/images/a.jpg\" />", null)]
+    [InlineData("<img src=\"data:image/png;base64,AAAA\" />", null)]
+    [InlineData("<p>Resimsiz</p>", null)]
+    [InlineData("", null)]
+    public void TheFirstAbsolutePictureIsTaken(string html, string? image) => Assert.Equal(image, FeedText.FirstImage(html));
 
     [Theory]
     [InlineData("<p>Bir.</p><ul><li>iki</li><li>üç</li></ul>", "Bir.\n\n- iki\n\n- üç")]

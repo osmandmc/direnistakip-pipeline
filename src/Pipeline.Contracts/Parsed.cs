@@ -3,7 +3,8 @@ namespace Pipeline.Contracts;
 /// <summary>
 /// An article's text (D-003): one record per parse, never overwritten. Made by our parser from raw HTML,
 /// or provided with the submission (ParserVersion "provided:csv", no raw HTML). ImageUrl: the article's main picture on
-/// the source's site (not copied); null when the page names none or the record is older than evrensel-3 / sendika-1.
+/// the source's site (not copied); null when the page names none or the record is older than evrensel-3 / sendika-1;
+/// for provided content, the one that came with it.
 /// </summary>
 public sealed record ParsedArticle(
     string Id,

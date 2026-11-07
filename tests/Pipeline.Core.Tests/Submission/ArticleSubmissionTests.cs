@@ -98,6 +98,14 @@ public class ArticleSubmissionTests
     }
 
     [Fact]
+    public async Task APictureThatCameWithTheContentIsKept()
+    {
+        await Submit(ArticleOrigin.Collector, new ArticleToSubmit(EvrenselUrl, "Başlık", null, "Gövde metni.", "https://www.evrensel.net/images/1.jpg"));
+
+        Assert.Equal("https://www.evrensel.net/images/1.jpg", Assert.Single(_parsed.Saved).ImageUrl);
+    }
+
+    [Fact]
     public async Task ArticleWithContentEntersAlreadyParsed()
     {
         var date = new DateTimeOffset(2026, 10, 17, 22, 40, 0, TimeSpan.FromHours(3));
