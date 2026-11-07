@@ -78,7 +78,7 @@ public sealed class ArticleSubmission(ILedgerStore ledger, IParsedStore parsed, 
         var version = ProvidedVersion(origin);
         var record = new ParsedArticle(
             Guid.NewGuid().ToString("N"), articleId, sourceId, version, now,
-            RawHtmlPath: null, article.Title?.Trim(), article.PublishedAt, article.Content!.Trim());
+            RawHtmlPath: null, article.Title?.Trim(), article.PublishedAt, article.Content!.Trim(), article.ImageUrl?.Trim());
 
         await parsed.SaveAsync(record, ct);
         await ledger.SetSummaryAsync(articleId, record.Title, record.PublishedAt, ct);

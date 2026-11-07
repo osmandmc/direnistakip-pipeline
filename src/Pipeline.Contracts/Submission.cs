@@ -10,13 +10,15 @@ public sealed record SubmitArticlesRequest(
 /// <summary>
 /// An article to take in. With <see cref="Content"/> (e.g. Evrensel's CSV: Url, Title, Content, Date) it enters
 /// already parsed and skips Fetch and Parse. Without it, the pipeline fetches and parses the page itself.
-/// Dates without a time zone should be sent as Turkey time (+03:00).
+/// Dates without a time zone should be sent as Turkey time (+03:00). ImageUrl: the article's picture on the source's
+/// site, kept with provided content; pages the pipeline parses take theirs from og:image.
 /// </summary>
 public sealed record ArticleToSubmit(
     string Url,
     string? Title = null,
     DateTimeOffset? PublishedAt = null,
-    string? Content = null);
+    string? Content = null,
+    string? ImageUrl = null);
 
 [JsonConverter(typeof(JsonStringEnumConverter<SubmissionStatus>))]
 public enum SubmissionStatus
